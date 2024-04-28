@@ -27,7 +27,7 @@ Chowkidaar monitors the student activities during the 45 Days of Productivity - 
 </div>
 <div align="center">
 <br/>
-<img src='https://skillicons.dev/icons?i=nodejs,postgresql' ></img>
+<img src='https://skillicons.dev/icons?i=py,postgresql' ></img>
 
 </div>
 <br/>
