@@ -1,24 +1,22 @@
 import re
 import time
+from dfa import IdentityAutomata
 
 def extract_user_info(msg: str):
-    t1 = time.time()
-    match = re.search(r'\bB\d{6}\b', msg)
-    t2 = time.time()
-    search_time = t2 - t1
     
-    if match:
-        user_id = match.group()
+    machine = IdentityAutomata()
+    msg = msg.lower()
+    tokens = msg.split()
+    potentialIds = [word for word in tokens if word[0] =='b']
+
+    for k in potentialIds:
+        if machine.is_accepted(k[1:]):
+            name = msg.split("\n\n")[0].strip("\n")[0]
+            id_location = msg.find(k)
+            name = msg[:id_location].split()
         
-        t3 = time.time()
-        id_pos = msg.find(user_id)
-        name = msg[:id_pos].strip().split("\n")[0]
-        t4 = time.time()
-        process_time = t4 - t3
-        
-        return user_id, name, search_time, process_time
-    
-    return None, None, None, None
+            return name[0]+" "+ name[1],k
+    return None,None
 
 messages = [
     '''
@@ -67,10 +65,8 @@ Day 24:
 ]
 
 for msg in messages:
-    user_id, name, search_time, process_time = extract_user_info(msg)
+    user_id, name = extract_user_info(msg)
     if user_id and name:
         print(f"ID: {user_id}")
         print(f"Name: {name}")
-        print(f"Search Time: {search_time}")
-        print(f"Process Time: {process_time}")
         print("-----")
