@@ -1,22 +1,25 @@
 import re
+import time
 
 def extract_user_info(msg: str):
-    # Search for the user ID pattern
+    t1 = time.time()
     match = re.search(r'\bB\d{6}\b', msg)
+    t2 = time.time()
+    search_time = t2 - t1
+    
     if match:
         user_id = match.group()
-        print("user_id = ",user_id)
-        # Find the position of the user ID in the message
-        id_pos = msg.find(user_id)
         
-        # Extract the name from the beginning of the message up to the user ID
-        name = msg[:id_pos].strip()
-        print("name_ = ",name)
-        return user_id, name
+        t3 = time.time()
+        id_pos = msg.find(user_id)
+        name = msg[:id_pos].strip().split("\n")[0]
+        t4 = time.time()
+        process_time = t4 - t3
+        
+        return user_id, name, search_time, process_time
     
-    return None, None
+    return None, None, None, None
 
-# Example messages
 messages = [
     '''
     Soubhik Gon
@@ -43,16 +46,31 @@ messages = [
     ''',
     '''
     Sarthak Mishra
-    ID : B122100
+    ID - B122100
     Day 25:
     • Completed learning javascript
     • Solved leetcode problems based on sliding window
+    ''',
+    '''
+    Binashak Mohanty
+    B122038
+    Day 15 :
+    Learnt about working of sensors and their applications.
+    Started working on a Scanner app.
+    ''',
+    '''Aurojyoti Das 
+B422017
+Day 24:
+. Continued studying html
+. Solved 2 question on gfg
     '''
 ]
 
 for msg in messages:
-    user_id, name = extract_user_info(msg)
+    user_id, name, search_time, process_time = extract_user_info(msg)
     if user_id and name:
-        print("User ID:", user_id)
-        print("Name:", name)
-        print("------")
+        print(f"ID: {user_id}")
+        print(f"Name: {name}")
+        print(f"Search Time: {search_time}")
+        print(f"Process Time: {process_time}")
+        print("-----")
