@@ -1,5 +1,5 @@
 import time
-from dfa import IdentityAutomata
+from internal.dfa import IdentityAutomata
 
 def benchmark_dfa(dfa, strings):
     total_time = 0
@@ -12,6 +12,5 @@ def benchmark_dfa(dfa, strings):
     average_time_per_string = total_time / len(strings)
     print(f"Average time per string: {average_time_per_string} seconds")
 
-# Example usage:
 strings_to_test = ['429056', '1234567890', '422019'] * 100000
 benchmark_dfa(IdentityAutomata(), strings_to_test)

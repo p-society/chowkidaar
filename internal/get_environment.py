@@ -1,5 +1,5 @@
 from loguru import logger
-from errors import EnvNotFound
+from errors.errors import EnvNotFound
 import sys
 
 def LoadEnv()-> dict:

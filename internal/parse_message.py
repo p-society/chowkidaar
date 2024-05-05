@@ -1,9 +1,8 @@
 import re
 import time
-from dfa import IdentityAutomata
+from internal.dfa import IdentityAutomata
 
 def extract_user_info(msg: str):
-    
     machine = IdentityAutomata()
     msg = msg.lower()
     tokens = msg.split()
