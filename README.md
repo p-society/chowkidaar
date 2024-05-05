@@ -23,7 +23,7 @@ Chowkidaar monitors the student activities during the 45 Days of Productivity - 
 ----------------------------------------
 <div align="center">
 
-**CHowkidaar** is a Automation & Monitoring Discord Bot. The application is built using NodeJS,PostgreSQL.
+**Chowkidaar** is a Automation & Monitoring Discord Bot. The application is built using Python,PostgreSQL.
 </div>
 <div align="center">
 <br/>
