@@ -7,30 +7,31 @@ def extract_user_info(msg: str):
     msg = msg.lower()
     tokens = msg.split()
     potentialIds = [word for word in tokens if word[0] =='b']
-
     for k in potentialIds:
         if machine.is_accepted(k[1:]):
             name = msg.split("\n\n")[0].strip("\n")[0]
             id_location = msg.find(k)
             name = msg[:id_location].split()
-        
             return name[0]+" "+ name[1],k
     return None,None
 
 messages = [
     '''
+    Soubhik Gon
     B422056
     Day 25:
     Continued learning elastic beanstalk and cloud functions
-    Started working on a project using React-RTK with B122103
+    Started working on a project using React-RTK 
     solved some leetcode problem
     ''',
     '''
+    Samarth Thaker
     B122126
     Day 25:
     Solved leetcode problems. Continued working on the app.
     ''',
     '''
+    Pruthiraj panda
     ID B122085 
     Day 22
 
@@ -38,7 +39,6 @@ messages = [
     solved sort a linklist by bubble sort algorithm.
     solved some questions on string largest odd number in a string and reverse words in a string.
     ''',
-    ""
     '''
     Sarthak Mishra
     ID - B122100
@@ -61,9 +61,11 @@ Day 24:
     '''
 ]
 
-for msg in messages:
-    user_id, name = extract_user_info(msg)
-    if user_id and name:
-        print(f"ID: {user_id}")
-        print(f"Name: {name}")
-        print("-----")
+
+if __name__ == "__main__":
+    for msg in messages:
+        user_id, name = extract_user_info(msg)
+        if user_id and name:
+            print(f"ID: {user_id}")
+            print(f"Name: {name}")
+            print("-----")

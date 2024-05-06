@@ -1,17 +1,7 @@
 import psycopg2
-import uuid
 
 def migrate_chowkidaar_models():
-    """
-    Migrates the 'student_list' and 'participation_logs' tables to the 'chowkidaar' database.
-
-    Uses UUIDs for primary keys in both tables for better security and scalability.
-    Adds validation constraints to enforce data integrity.
-    Provides error handling for potential connection issues.
-    """
-
     try:
-        # Connect to the PostgreSQL database
         conn = psycopg2.connect(
             database="chowkidaar",
             user="postgres",
@@ -22,7 +12,6 @@ def migrate_chowkidaar_models():
 
         cur = conn.cursor()
 
-        # Create participation_logs table with UUID primary key and constraints
         create_participation_logs_table = """
 CREATE TABLE participation_logs (
     id TEXT PRIMARY KEY,
@@ -40,7 +29,7 @@ CREATE TABLE users (
     college_id VARCHAR(7) NOT NULL,
     discord_username VARCHAR(50) NOT NULL,
     discriminator VARCHAR(50) NOT NULL,
-    avatar_url VARCHAR(50) NOT NULL,
+    avatar_url VARCHAR(200) NOT NULL,
     account_created_at TIMESTAMP WITH TIME ZONE,
     display_name VARCHAR(50) NOT NULL,
     branch VARCHAR(10) NOT NULL,
