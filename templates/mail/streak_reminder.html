@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streak Reminder</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            font-size: 24px;
+            color: #ff6347;
+            margin-bottom: 20px;
+        }
+        .streak-number {
+            font-size: 36px;
+            color: #ff4500;
+        }
+        .message {
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .footer {
+            font-size: 14px;
+            color: #777;
+            margin-top: 20px;
+        }
+        .graphic {
+            width: 100px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Don't Break Your Streak!</div>
+        <img src="https://via.placeholder.com/100" alt="Reminder Graphic" class="graphic">
+        <div class="streak-number">Current Streak: {{streak_days}} Days</div>
+        <div class="message">
+            Don't forget to make your post today to keep your streak alive! You're doing great!
+        </div>
+        <div class="footer">
+            <a href="https://example.com">Visit our website</a>
+        </div>
+    </div>
+</body>
+</html>

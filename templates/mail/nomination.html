@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nomination Invitation</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            font-size: 24px;
+            color: #ff6347;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .footer {
+            font-size: 14px;
+            color: #777;
+            margin-top: 20px;
+        }
+        .graphic {
+            width: 100px;
+            margin: 20px auto;
+        }
+        .profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">You've Been Nominated!</div>
+        <img src="https://via.placeholder.com/100" alt="Nomination Graphic" class="graphic">
+        <div class="message">
+            {{nominator_name}} has nominated you to join the challenge! Show us what you've got!
+        </div>
+        <img src="{{nominator_profile_pic}}" alt="{{nominator_name}}'s Profile Picture" class="profile-pic">
+        <div class="footer">
+            <a href="https://example.com">Visit our website</a>
+        </div>
+    </div>
+</body>
+</html>
