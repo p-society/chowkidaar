@@ -7,7 +7,7 @@ from discord.ext import commands
 from db import connect_to_database, save_log
 from parse_message import extract_user_info
 import os
-
+from time_check import can_send_message
 conn = connect_to_database()
 cur= conn.cursor()
 
@@ -38,9 +38,10 @@ async def on_message(message):
     discord_message_id= message.id
     content = str(message.content)
     timestamp = message.created_at
-
+    
     try: 
-        if in_text_valid == 1:
+        # if in_text_valid == 1:
+        if can_send_message(discord_user_id=discord_user_id,msg_sending_time=timestamp,conn=conn):
             save_log(conn, content, discord_user_id, discord_message_id, timestamp ,in_text_valid=-1)
             print(f"Message from {message.author.name} saved to the database.")
             await message.add_reaction('🎊')
@@ -51,10 +52,6 @@ async def on_message(message):
     except Exception as e:
         print(f"Error saving message to database: {e}")
         conn.rollback()
- 
-
-
-
 
     await bot.process_commands(message)
 
