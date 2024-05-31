@@ -5,7 +5,7 @@ import sys
 from config import DISCORD_TOKEN, WATCHED_CHANNEL_ID
 from discord.ext import commands
 from db import connect_to_database, save_log
-from dfa import IdentityAutomata 
+from parse_message import extract_user_info
 import os
 
 conn = connect_to_database()
@@ -30,11 +30,10 @@ async def on_message(message):
     if message.channel.id != WATCHED_CHANNEL_ID:
         return  # Ignore messages not from the watched channel
     
-    checker = IdentityAutomata()
+    
+    college_id = extract_user_info(message.content)
+    print(college_id)
 
-    if checker.is_accepted(message.content):
-        in_text_valid = 1
-    # Parse the message
     discord_user_id = message.author.id
     discord_message_id= message.id
     content = str(message.content)
