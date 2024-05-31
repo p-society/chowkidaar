@@ -6,7 +6,7 @@ from config import DISCORD_TOKEN, WATCHED_CHANNEL_ID
 from discord.ext import commands
 from db import connect_to_database, save_log, check_intext_validity
 import os
-
+from time_check import can_send_message
 conn = connect_to_database()
 cur = conn.cursor()
 
@@ -34,6 +34,13 @@ async def on_message(message):
     discord_message_id = message.id
     content = str(message.content)
     timestamp = message.created_at
+# <<<<<<< time-checks
+    
+#     try: 
+#         # if in_text_valid == 1:
+#         if can_send_message(discord_user_id=discord_user_id,msg_sending_time=timestamp,conn=conn):
+#             save_log(conn, content, discord_user_id, discord_message_id, timestamp ,in_text_valid=-1)
+# =======
     in_text_valid = check_intext_validity(conn, content)
 
     try:
@@ -46,6 +53,7 @@ async def on_message(message):
                 timestamp,
                 in_text_valid,
             )
+# >>>>>>> main
             print(f"Message from {message.author.name} saved to the database.")
             await message.add_reaction("🎊")
         else:

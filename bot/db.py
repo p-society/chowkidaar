@@ -16,18 +16,23 @@ def connect_to_database():
         print(f"Error connecting to the database: {e}")
         return None
     
-def save_log(conn, message, discord_user_id, discord_message_id, sent_at ,in_text_valid=-1):
-    cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO participation_logs (
-            message, discord_user_id, discord_message_id, sent_at, in_text_valid
-        ) VALUES (%s, %s, %s, %s, %s)
-        """,
-        (message, discord_user_id, discord_message_id, sent_at ,in_text_valid)
-    )
-    conn.commit()
-    cur.close()
+def save_log(conn, message, discord_user_id, discord_message_id, sent_at, in_text_valid=-1):
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO participation_logs (
+                message, discord_user_id, discord_message_id, sent_at, in_text_valid
+            ) VALUES (%s, %s, %s, %s, %s)
+            """,
+            (message, discord_user_id, discord_message_id, sent_at, in_text_valid)
+        )
+        conn.commit()
+    except psycopg2.Error as e:
+        print(f"Error occurred while saving log: {e}")
+        conn.rollback()  # Rollback the transaction if there is any error
+    finally:
+        cur.close()
 
 def check_intext_validity(conn, message):
     try: 
