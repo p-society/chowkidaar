@@ -1,28 +1,112 @@
-import discord # type: ignore
-import sys
-from loguru import logger
+import discord
 import asyncio
-# from fastapi import FastAPI
-from internal.get_environment import LoadEnv
-from internal.core import client as chowkidaar_client
-
-async def StartBot():
-    await chowkidaar_client.start(token=LoadEnv().get('DISCORD_TOKEN'))
-    print("deez nuts")
-
-async def main():
-    await StartBot()
-
-asyncio.run(main())
+import signal
+import sys
+from config import DISCORD_TOKEN, WATCHED_CHANNEL_ID
+from discord.ext import commands
+from db import connect_to_database, save_log, check_intext_validity, update_log, delete_log
+import os
+from time_check import can_send_message, is_in_time_bracket
 
 
-# @Design and creative team
+intents = discord.Intents.default()
+intents.messages = True  # Ensure the bot can read messages
+intents.message_content = True  # Add this line if you need access to message content
 
-# Ek avatar chahiye discord bot keliye. "Chowkidaar" ka ek avatar banado profile picture keliye
-# https://github.com/p-society/chowkidaar/
-# Dimensions: 1024x1024 PNG and SVG Formats me
+bot = commands.Bot(command_prefix="!", intents=intents)
+bot.activity = discord.Activity(type=discord.ActivityType.watching, name="for message updates")
 
-# June 1st week se start hoga 45 days event,usse pehele chahie hoga...Aaram se banao
-# can take inspiration from other bots like above ones 👆
 
-['_CACHED_SLOTS', '_HANDLERS', '__annotations__', '__class__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '_add_reaction', '_clear_emoji', '_cs_channel_mentions', '_cs_clean_content', '_cs_guild', '_cs_raw_channel_mentions', '_cs_raw_mentions', '_cs_raw_role_mentions', '_cs_system_content', '_edited_timestamp', '_handle_activity', '_handle_application', '_handle_attachments', '_handle_author', '_handle_components', '_handle_content', '_handle_edited_timestamp', '_handle_embeds', '_handle_flags', '_handle_interaction', '_handle_member', '_handle_mention_everyone', '_handle_mention_roles', '_handle_mentions', '_handle_nonce', '_handle_pinned', '_handle_tts', '_handle_type', '_rebind_cached_references', '_remove_reaction', '_state', '_try_patch', '_update', 'activity', 'add_files', 'add_reaction', 'application', 'application_id', 'attachments', 'author', 'channel', 'channel_mentions', 'clean_content', 'clear_reaction', 'clear_reactions', 'components', 'content', 'create_thread', 'created_at', 'delete', 'edit', 'edited_at', 'embeds', 'fetch', 'flags', 'guild', 'id', 'interaction', 'is_system', 'jump_url', 'mention_everyone', 'mentions', 'nonce', 'pin', 'pinned', 'position', 'publish', 'raw_channel_mentions', 'raw_mentions', 'raw_role_mentions', 'reactions', 'reference', 'remove_attachments', 'remove_reaction', 'reply', 'role_mentions', 'role_subscription', 'stickers', 'system_content', 'to_message_reference_dict', 'to_reference', 'tts', 'type', 'unpin', 'webhook_id']
+@bot.event
+async def on_ready():
+    print(f"Bot is ready. Logged in as {bot.user}")
+
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    if message.channel.id != WATCHED_CHANNEL_ID:
+        return
+
+    discord_user_id = message.author.id
+    discord_message_id = message.id
+    content = str(message.content)
+    timestamp = message.created_at
+    in_text_valid = check_intext_validity(content)
+
+    try:
+        if can_send_message(discord_user_id, timestamp):
+            save_log(
+                content,
+                discord_user_id,
+                discord_message_id,
+                timestamp,
+                in_text_valid,
+            )
+            print(f"Message from {message.author.name} saved to the database.")
+            await message.add_reaction("🎊")
+        else:
+            print(f"Message from {message.author.name} could not be saved to the database.")
+            await message.add_reaction("👁️")
+
+    except Exception as e:
+        print(f"Error saving message to database: {e}")
+    await bot.process_commands(message)
+
+@bot.event
+async def on_message_edit(old_message, new_message):
+    if new_message.author == bot.user:
+        return
+
+    if new_message.channel.id != WATCHED_CHANNEL_ID:
+        return
+
+    discord_user_id = new_message.author.id
+    discord_message_id = new_message.id
+    content = str(new_message.content)
+    timestamp = new_message.created_at
+    updated_at = new_message.edited_at
+    in_text_valid = check_intext_validity(content)
+
+    try:
+        if is_in_time_bracket(timestamp) and update_log(discord_message_id, content, in_text_valid, updated_at):
+            await new_message.add_reaction("🛠️")
+        else:
+            print(f"Edited message from {new_message.author.name} could not be saved to the database.")
+            await new_message.add_reaction("👀")
+    except Exception as e:
+        print(f"Error updating message in database: {e}")
+    await bot.process_commands(new_message)
+
+@bot.event
+async def on_message_delete(message):
+    if message.author == bot.user:
+        return
+    if message.channel.id != WATCHED_CHANNEL_ID:
+        return
+    discord_message_id = message.id
+    try:
+        delete_log(discord_message_id)
+        print(f"Message with ID {discord_message_id} was marked deleted.")
+    except Exception as e:
+        print(f"Error deleting message from database: {e}")
+
+    await bot.process_commands(message)
+    
+
+
+# async def shutdown(signal, frame):
+#     print("Shutting down bot and closing database connection...")
+#     await bot.close()
+#     cur.close()
+#     conn.close()
+#     sys.exit(0)
+
+# # Catch termination signals to ensure graceful shutdown
+# signal.signal(signal.SIGINT, lambda s, f: asyncio.create_task(shutdown(s, f)))
+# signal.signal(signal.SIGTERM, lambda s, f: asyncio.create_task(shutdown(s, f)))
+
+
+bot.run(DISCORD_TOKEN)

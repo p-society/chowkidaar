@@ -4,7 +4,6 @@ from email.mime.text import MIMEText
 import sys
 from loguru import logger
 from jinja2 import Environment, FileSystemLoader
-import schedule
 import time
 from get_environment import LoadEnv
 
