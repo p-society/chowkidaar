@@ -75,8 +75,7 @@ async def on_message_edit(old_message, new_message):
     in_text_valid = check_intext_validity(conn, content)
 
     try:
-        if is_in_time_bracket(timestamp):
-            update_log(conn, discord_message_id, content, in_text_valid, updated_at)
+        if is_in_time_bracket(timestamp) and update_log(conn, discord_message_id, content, in_text_valid, updated_at):
             await new_message.add_reaction("🛠️")
         else:
             print(f"Edited message from {new_message.author.name} could not be saved to the database.")
