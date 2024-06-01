@@ -50,6 +50,23 @@ def update_log(conn, discord_message_id, message, in_text_valid, updated_at):
     finally:
         cur.close()
 
+def delete_log(conn, discord_message_id):
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            UPDATE participation_logs
+            SET deleted_at = NOW()
+            WHERE discord_message_id = %s
+            """,
+            (discord_message_id,),
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+    finally:
+        cur.close()
+
 def check_intext_validity(conn, message):
     try: 
         college_id = extract_user_info(message)

@@ -4,7 +4,7 @@ import signal
 import sys
 from config import DISCORD_TOKEN, WATCHED_CHANNEL_ID
 from discord.ext import commands
-from db import connect_to_database, save_log, check_intext_validity, update_log
+from db import connect_to_database, save_log, check_intext_validity, update_log, delete_log
 import os
 from time_check import can_send_message, is_in_time_bracket
 conn = connect_to_database()
@@ -35,13 +35,6 @@ async def on_message(message):
     discord_message_id = message.id
     content = str(message.content)
     timestamp = message.created_at
-# <<<<<<< time-checks
-    
-#     try: 
-#         # if in_text_valid == 1:
-#         if can_send_message(discord_user_id=discord_user_id,msg_sending_time=timestamp,conn=conn):
-#             save_log(conn, content, discord_user_id, discord_message_id, timestamp ,in_text_valid=-1)
-# =======
     in_text_valid = check_intext_validity(conn, content)
 
     try:
@@ -54,12 +47,11 @@ async def on_message(message):
                 timestamp,
                 in_text_valid,
             )
-# >>>>>>> main
             print(f"Message from {message.author.name} saved to the database.")
             await message.add_reaction("🎊")
         else:
             print(f"Message from {message.author.name} could not be saved to the database.")
-            await message.add_reaction("❌")
+            await message.add_reaction("👁️")
 
     except Exception as e:
         print(f"Error saving message to database: {e}")
@@ -69,7 +61,6 @@ async def on_message(message):
 
 @bot.event
 async def on_message_edit(old_message, new_message):
-    print("Message edited.")
     if new_message.author == bot.user:
         return
 
@@ -89,13 +80,34 @@ async def on_message_edit(old_message, new_message):
             await new_message.add_reaction("🛠️")
         else:
             print(f"Edited message from {new_message.author.name} could not be saved to the database.")
-            await new_message.add_reaction("❗")
+            await new_message.add_reaction("👀")
 
     except Exception as e:
         print(f"Error updating message in database: {e}")
         conn.rollback()
     
     await bot.process_commands(new_message)
+
+@bot.event
+async def on_message_delete(message):
+    if message.author == bot.user:
+        return
+
+    if message.channel.id != WATCHED_CHANNEL_ID:
+        return
+
+    discord_message_id = message.id
+
+    try:
+        delete_log(conn, discord_message_id)
+        print(f"Message with ID {discord_message_id} was marked deleted.")
+    except Exception as e:
+        print(f"Error deleting message from database: {e}")
+        conn.rollback()
+    finally:
+        cur.close()
+
+    await bot.process_commands(message)
     
 
 
