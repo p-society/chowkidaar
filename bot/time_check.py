@@ -2,7 +2,7 @@ from datetime import datetime, time, timedelta
 import pytz
 
 initial = 15
-final= 17
+final= 18
 
 def is_in_time_bracket(msg_sending_time):
     

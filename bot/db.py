@@ -5,13 +5,13 @@ import pytz
 import datetime
 def connect_to_database():
     try:
-        # conn = psycopg2.connect('postgresql://synergylabs_owner:ZYz8PqkvE9Ma@ep-snowy-sunset-a14d2ehb.ap-southeast-1.aws.neon.tech/Chowky?sslmode=require')
-        conn = psycopg2.connect(
-            dbname=DATABASE_NAME,
-            user=DATABASE_USER,
-            password=DATABASE_PASSWORD,
-            host=DATABASE_HOST
-        )
+        conn = psycopg2.connect('postgresql://synergylabs_owner:ZYz8PqkvE9Ma@ep-snowy-sunset-a14d2ehb.ap-southeast-1.aws.neon.tech/Chowky?sslmode=require')
+        # conn = psycopg2.connect(
+        #     dbname=DATABASE_NAME,
+        #     user=DATABASE_USER,
+        #     password=DATABASE_PASSWORD,
+        #     host=DATABASE_HOST
+        # )
 
         print("Connection to the database was successful")
         return conn
@@ -62,7 +62,7 @@ def update_log(conn, discord_message_id, message, in_text_valid, updated_at):
 
 def get_ist_time():
     # Get the current time in UTC
-    utc_now = datetime.utcnow()
+    utc_now = datetime.datetime.now()
     # Convert UTC time to IST
     ist = pytz.timezone('Asia/Kolkata')
     ist_now = utc_now.replace(tzinfo=pytz.utc).astimezone(ist)
@@ -113,5 +113,5 @@ def check_intext_validity(conn, message):
 
 if __name__ == "__main__":
     conn= connect_to_database()
-    print(check_intext_validity(conn, "Abhigyan Dutta B123003 aetwgwrgwsgrgwsrgswgs"))
+    print(check_intext_validity(conn, ""))
     conn.close()
