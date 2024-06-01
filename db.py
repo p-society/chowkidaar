@@ -5,13 +5,14 @@ import pytz
 import datetime
 def connect_to_database():
     try:
-        conn = psycopg2.connect('postgresql://synergylabs_owner:ZYz8PqkvE9Ma@ep-snowy-sunset-a14d2ehb.ap-southeast-1.aws.neon.tech/Chowky?sslmode=require')
-        # conn = psycopg2.connect(
-        #     dbname=DATABASE_NAME,
-        #     user=DATABASE_USER,
-        #     password=DATABASE_PASSWORD,
-        #     host=DATABASE_HOST
-        # )
+        # conn = psycopg2.connect('postgresql://synergylabs_owner:ZYz8PqkvE9Ma@ep-snowy-sunset-a14d2ehb.ap-southeast-1.aws.neon.tech/Chowky?sslmode=require')
+        conn = psycopg2.connect(
+            dbname=DATABASE_NAME,
+            user=DATABASE_USER,
+            password=DATABASE_PASSWORD,
+            host=DATABASE_HOST,
+            port=5432
+        )
         print("Connection to the database was successful")
         return conn
     except psycopg2.Error as e:
