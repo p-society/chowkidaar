@@ -12,7 +12,6 @@ def connect_to_database():
         #     password=DATABASE_PASSWORD,
         #     host=DATABASE_HOST
         # )
-
         print("Connection to the database was successful")
         return conn
     except psycopg2.Error as e:
@@ -20,8 +19,9 @@ def connect_to_database():
         return None
     
     
-def save_log(conn, message, discord_user_id, discord_message_id, sent_at, in_text_valid=-1):
+def save_log( message, discord_user_id, discord_message_id, sent_at, in_text_valid=-1):
     try:
+        conn = connect_to_database()
         cur = conn.cursor()
         cur.execute(
             """
@@ -37,9 +37,11 @@ def save_log(conn, message, discord_user_id, discord_message_id, sent_at, in_tex
         conn.rollback()  # Rollback the transaction if there is any error
     finally:
         cur.close()
+        conn.close()
 
-def update_log(conn, discord_message_id, message, in_text_valid, updated_at):
+def update_log(discord_message_id, message, in_text_valid, updated_at):
     try:
+        conn = connect_to_database()
         cur = conn.cursor()
         cur.execute("""
             UPDATE participation_logs
@@ -59,17 +61,17 @@ def update_log(conn, discord_message_id, message, in_text_valid, updated_at):
         conn.rollback()
     finally:
         cur.close()
+        conn.close()
 
 def get_ist_time():
-    # Get the current time in UTC
     utc_now = datetime.datetime.now()
-    # Convert UTC time to IST
     ist = pytz.timezone('Asia/Kolkata')
     ist_now = utc_now.replace(tzinfo=pytz.utc).astimezone(ist)
     return ist_now
 
-def delete_log(conn, discord_message_id):
+def delete_log(discord_message_id):
     try:
+        conn = connect_to_database()
         cur = conn.cursor()
         ist_time = get_ist_time()
         cur.execute(
@@ -87,12 +89,14 @@ def delete_log(conn, discord_message_id):
         conn.rollback()
     finally:
         cur.close()
+        conn.close()
 
-def check_intext_validity(conn, message):
+def check_intext_validity( message):
+    conn = connect_to_database()
+    cur= conn.cursor()
     try: 
         college_id = extract_user_info(message)
         if college_id:
-            cur= conn.cursor()
             cur.execute("SELECT name FROM student_list_2023 WHERE student_id = %s", (college_id.upper(),))
             full_name = cur.fetchone()
             if full_name:
@@ -104,14 +108,14 @@ def check_intext_validity(conn, message):
             else:
                 print(f"No name found for student_id: {college_id}")
         return 0  
-        cur.close() 
 
     except Exception as e:
         print(f"Error while checking intext validity: {e}")
         return -1
-
+    finally:
+        cur.close() 
+        conn.close()
+    
 
 if __name__ == "__main__":
-    conn= connect_to_database()
-    print(check_intext_validity(conn, ""))
-    conn.close()
+    print(check_intext_validity( ""))
