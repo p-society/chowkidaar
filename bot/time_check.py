@@ -6,7 +6,7 @@ def is_in_time_bracket(msg_sending_time):
     ist = pytz.timezone('Asia/Kolkata')
     msg_sending_time_ist = msg_sending_time.astimezone(ist)
     
-    start_time = time(21, 0)  # 10 PM IST
+    start_time = time(9, 0)  # 10 PM IST
     end_time = time(12, 0)    # 12 PM IST (next day)
     
     if msg_sending_time_ist.time() >= start_time or msg_sending_time_ist.time() < end_time:

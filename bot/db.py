@@ -34,6 +34,22 @@ def save_log(conn, message, discord_user_id, discord_message_id, sent_at, in_tex
     finally:
         cur.close()
 
+def update_log(conn, discord_message_id, message, in_text_valid, updated_at):
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE participation_logs
+            SET message = %s, in_text_valid = %s, updated_at = %s
+            WHERE discord_message_id = %s
+        """, (message, in_text_valid, updated_at, discord_message_id))
+        conn.commit()
+        print(f"Log updated for message ID: {discord_message_id}")
+    except Exception as e:
+        print(f"Error updating log: {e}")
+        conn.rollback()
+    finally:
+        cur.close()
+
 def check_intext_validity(conn, message):
     try: 
         college_id = extract_user_info(message)
@@ -49,7 +65,8 @@ def check_intext_validity(conn, message):
                     return 1
             else:
                 print(f"No name found for student_id: {college_id}")
-        return 0   
+        return 0  
+        cur.close() 
 
     except Exception as e:
         print(f"Error while checking intext validity: {e}")
