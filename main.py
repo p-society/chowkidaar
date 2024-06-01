@@ -7,7 +7,7 @@ from discord.ext import commands
 from db import connect_to_database, save_log, check_intext_validity, update_log, delete_log
 import os
 from time_check import can_send_message, is_in_time_bracket
-
+from prometheus_client import Counter , start_http_server
 
 intents = discord.Intents.default()
 intents.messages = True  # Ensure the bot can read messages
@@ -17,10 +17,15 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 bot.activity = discord.Activity(type=discord.ActivityType.watching, name="for message updates")
 
 
+messages_sent_total = Counter('discord_messages_sent_total', 'Total number of messages sent')
+messages_edited_total = Counter('discord_messages_edited_total', 'Total number of messages edited')
+messages_deleted_total = Counter('discord_messages_deleted_total', 'Total number of messages deleted')
+
+start_http_server(8000) 
+
 @bot.event
 async def on_ready():
     print(f"Bot is ready. Logged in as {bot.user}")
-
 
 @bot.event
 async def on_message(message):
@@ -53,6 +58,7 @@ async def on_message(message):
 
     except Exception as e:
         print(f"Error saving message to database: {e}")
+    messages_sent_total.inc()   
     await bot.process_commands(message)
 
 @bot.event
@@ -78,6 +84,7 @@ async def on_message_edit(old_message, new_message):
             await new_message.add_reaction("👀")
     except Exception as e:
         print(f"Error updating message in database: {e}")
+    messages_edited_total.inc()
     await bot.process_commands(new_message)
 
 @bot.event
@@ -92,7 +99,8 @@ async def on_message_delete(message):
         print(f"Message with ID {discord_message_id} was marked deleted.")
     except Exception as e:
         print(f"Error deleting message from database: {e}")
-
+    
+    messages_deleted_total.inc()
     await bot.process_commands(message)
     
 
