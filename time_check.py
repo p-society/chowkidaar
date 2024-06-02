@@ -36,6 +36,7 @@ def is_unique_in_time_bracket(discord_user_id, msg_sending_time):
         WHERE discord_user_id = %s
         AND sent_at >= %s
         AND sent_at < %s
+        AND deleted_at IS NULL
     """, (discord_user_id, bracket_start, bracket_end))
     
     result = cur.fetchone()
