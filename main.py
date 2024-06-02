@@ -34,6 +34,10 @@ async def on_message(message):
 
     if message.channel.id != WATCHED_CHANNEL_ID:
         return
+    
+    # ignore arcane
+    if message.author.id == 437808476106784770:
+        return
 
     discord_user_id = message.author.id
     discord_message_id = message.id
@@ -68,6 +72,10 @@ async def on_message_edit(old_message, new_message):
 
     if new_message.channel.id != WATCHED_CHANNEL_ID:
         return
+    
+    # ignore arcane
+    if new_message.author.id == 437808476106784770:
+        return
 
     discord_user_id = new_message.author.id
     discord_message_id = new_message.id
@@ -92,6 +100,9 @@ async def on_message_delete(message):
     if message.author == bot.user:
         return
     if message.channel.id != WATCHED_CHANNEL_ID:
+        return
+    # ignore arcane
+    if message.author.id == 437808476106784770:
         return
     discord_message_id = message.id
     try:
