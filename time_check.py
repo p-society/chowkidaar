@@ -1,7 +1,7 @@
 from datetime import datetime, time, timedelta
 import pytz
 from db import connect_to_database
-initial = 16
+initial = 22
 final= 12
 
 def is_in_time_bracket(msg_sending_time):
