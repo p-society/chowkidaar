@@ -23,6 +23,7 @@ DATABASE_USER = os.getenv('DATABASE_USER')
 DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD')
 DATABASE_HOST = os.getenv('DATABASE_HOST')
 
+
 if __name__ == "__main__":
     print("Using environment:", environment)
     print("DISCORD_TOKEN:", DISCORD_TOKEN)
