@@ -3,7 +3,7 @@ from config import DISCORD_TOKEN, WATCHED_CHANNEL_ID
 from discord.ext import commands
 from db import save_log, check_intext_validity, update_log, delete_log
 from time_check import can_send_message, is_in_time_bracket
-from prometheus_client import Counter , Gauge, start_http_server
+from prometheus_client import Counter , start_http_server
 from loki_logger import logger
 intents = discord.Intents.default()
 intents.messages = True  # Ensure the bot can read messages
