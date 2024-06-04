@@ -1,19 +1,26 @@
 from datetime import datetime, time, timedelta
 import pytz
 from db import connect_to_database
-initial = 22
-final= 12
+from prometheus_client import Counter 
+
+INITIAL = 22
+FINAL= 12
+
+
+messages_rejected_total_TIME = Counter('discord_messages_rejected_total_TIME', 'Total number of messages rejected due to time check invalidations')
+messages_rejected_total_DUPLICATE = Counter('discord_messages_rejected_total_DUPLICATE', 'Total number of messages rejected due to duplicate messages in one time frame')
 
 def is_in_time_bracket(msg_sending_time):
     ist = pytz.timezone('Asia/Kolkata')
     msg_sending_time_ist = msg_sending_time.astimezone(ist)
     msg_time = msg_sending_time_ist.time()
 
-    start_time = time(initial, 0)
-    end_time = time(final, 0)
+    start_time = time(INITIAL, 0)
+    end_time = time(FINAL, 0)
 
     if start_time <= msg_time or msg_time <= end_time:
         return True
+    messages_rejected_total_TIME.inc()
     return False
 
 
@@ -25,8 +32,8 @@ def is_unique_in_time_bracket(discord_user_id, msg_sending_time):
     msg_sending_time_ist = msg_sending_time.astimezone(ist)
     msg_sending_date_ist = msg_sending_time_ist.date()
 
-    bracket_start = ist.localize(datetime.combine(msg_sending_date_ist, time(initial, 0)))
-    bracket_end = ist.localize(datetime.combine(msg_sending_date_ist + timedelta(days=1), time(final, 0)))
+    bracket_start = ist.localize(datetime.combine(msg_sending_date_ist, time(INITIAL, 0)))
+    bracket_end = ist.localize(datetime.combine(msg_sending_date_ist + timedelta(days=1), time(FINAL, 0)))
 
     print(f"Bracket start: {bracket_start}, Bracket end: {bracket_end}")
 
@@ -46,13 +53,13 @@ def is_unique_in_time_bracket(discord_user_id, msg_sending_time):
     print(f"Query result: {result}")
 
     if result[0] > 0:
+        messages_rejected_total_DUPLICATE.inc()
         return False
 
     return True
 
 def can_send_message(discord_user_id, msg_sending_time):
     
-    print(discord_user_id, msg_sending_time)
     if not is_in_time_bracket(msg_sending_time):
         print("Nahi bhej sakta 1")
         return False
