@@ -3,9 +3,11 @@ from config import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOS
 from parse_message import extract_user_info
 import pytz
 import datetime
+from prometheus_client import Counter
+
+total_db_operations = Counter('total_db_operations', 'Count of total database ops occured')
 def connect_to_database():
     try:
-        # conn = psycopg2.connect('postgresql://synergylabs_owner:ZYz8PqkvE9Ma@ep-snowy-sunset-a14d2ehb.ap-southeast-1.aws.neon.tech/Chowky?sslmode=require')
         conn = psycopg2.connect(
             dbname=DATABASE_NAME,
             user=DATABASE_USER,
@@ -33,6 +35,7 @@ def save_log( message, discord_user_id, discord_message_id, sent_at, in_text_val
             (message, discord_user_id, discord_message_id, sent_at, in_text_valid)
         )
         conn.commit()
+        total_db_operations.inc()
     except psycopg2.Error as e:
         print(f"Error occurred while saving log: {e}")
         conn.rollback()  # Rollback the transaction if there is any error
@@ -50,7 +53,7 @@ def update_log(discord_message_id, message, in_text_valid, updated_at):
             WHERE discord_message_id = %s
         """, (message, in_text_valid, updated_at, discord_message_id))
         conn.commit()
-        
+        total_db_operations.inc()
         if cur.rowcount == 0:
             conn.rollback()  # Rollback the transaction if no rows were updated
             print(f"No log found for message ID: {discord_message_id}")
@@ -85,6 +88,7 @@ def delete_log(discord_message_id):
         )
         conn.commit()
         print(f"Log marked as deleted for message ID: {discord_message_id}")
+        total_db_operations.inc()
     except Exception as e:
         print(f"Error updating log: {e}")
         conn.rollback()
@@ -94,12 +98,13 @@ def delete_log(discord_message_id):
 
 def check_intext_validity( message):
     conn = connect_to_database()
-    cur= conn.cursor()
+    cur = conn.cursor()
     try: 
         college_id = extract_user_info(message)
         if college_id:
             cur.execute("SELECT name FROM student_list_2023 WHERE student_id = %s", (college_id.upper(),))
             full_name = cur.fetchone()
+            total_db_operations.inc()
             if full_name:
                 first_name = full_name[0].split()[0]  # Assuming name is the first element of the tuple
                 if first_name.lower() in message.lower():
