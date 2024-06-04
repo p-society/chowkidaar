@@ -3,16 +3,11 @@ from logging_loki import LokiHandler
 
 
 HANDLER = LokiHandler(
-    url="https://my-loki-instance/loki/api/v1/push", 
-    tags={"application": "my-app"},
-    auth=("username", "password"),
+    url="http://127.0.0.1:3100/loki/api/v1/push", 
+    tags={"application": "chowkidaar"},
     version="1",
 )
 
 logger = getLogger("my-logger")
 logger.addHandler(HANDLER)
-logger.error(
-    "Something happened", 
-    extra={"tags": {"service": "my-service"}},
-)
-
+# docker run -d --name=loki -p 3100:3100 grafana/loki

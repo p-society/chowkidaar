@@ -10,13 +10,16 @@ intents.messages = True  # Ensure the bot can read messages
 intents.message_content = True  # Add this line if you need access to message content
 bot = commands.Bot(command_prefix="!", intents=intents)
 bot.activity = discord.Activity(type=discord.ActivityType.watching, name="for message updates")
+
 message_new_attempts_total= Counter('discord_messages_new_attempts_total', 'Total number of new messages received')
-message_new_edits_total= Counter('discord_messages_new_attempts_total', 'Total number of patch request received')
+message_new_edits_total= Counter('discord_messages_new_edit_attempts_total', 'Total number of patch request received')
 
 
 messages_sent_total = Counter('discord_messages_sent_total', 'Total number of messages saved in DB')
 messages_edited_total = Counter('discord_messages_edited_total', 'Total number of messages patched in DB')
 messages_deleted_total = Counter('discord_messages_deleted_total', 'Total number of messages deleted in DB')
+
+errors_encountered_total = Counter('errors_encountered_total','Total Errors Encountered during bot"s processing of messages')
 
 start_http_server(8000) 
 
@@ -58,15 +61,18 @@ async def on_message(message):
             logger.info(f"Message from {message.author.name} saved to the database.",extra={"tags": {"event": "on_message"}})
             print(f"Message from {message.author.name} saved to the database.")
             await message.add_reaction("🎊")
+            logger.info(f"Reaction 🎊 added to discord_user_id: {discord_user_id} for message id:{ discord_message_id}  successfully.",extra={"tags": {"event": "on_message"}})
+            messages_sent_total.inc()   
         else:
-            logger.warn(f"Message from {message.author.name} could not be saved to the database.",extra={"tags": {"event": "on_message"}})
+            logger.warning(f"Message from {message.author.name} could not be saved to the database.",extra={"tags": {"event": "on_message"}})
             print(f"Message from {message.author.name} could not be saved to the database.")
             await message.add_reaction("👁️")
+            logger.info(f"Reaction 👁️ added to discord_user_id: {discord_user_id} for message id:{ discord_message_id}  successfully.",extra={"tags": {"event": "on_message"}})
     except Exception as e:
         logger.error(f"Error saving message to database: {e}",extra={"tags": {"event": "on_message"}})
         print(f"Error saving message to database: {e}")
+        errors_encountered_total.inc()
     await bot.process_commands(message)
-    messages_sent_total.inc()   
     
 @bot.event
 async def on_message_edit(old_message, new_message):
@@ -98,13 +104,14 @@ async def on_message_edit(old_message, new_message):
             logger.info(f"Edited message from {new_message.author.name} for message id:{ discord_message_id}  could not be saved to the database.",extra={"tags": {"event": "on_message_edit"}})
             print(f"Edited message from {new_message.author.name} for message id:{ discord_message_id}  could not be saved to the database.")
             await new_message.add_reaction("👀")
-            logger.warn(f"Reaction 👀 added to discord_user_id: {discord_user_id} for message id: {discord_message_id} successfully.",extra={"tags": {"event": "on_message_edit"}})
+            logger.warning(f"Reaction 👀 added to discord_user_id: {discord_user_id} for message id: {discord_message_id} successfully.",extra={"tags": {"event": "on_message_edit"}})
    
     except Exception as e:
-   
+        
         logger.error(f"Error updating message in database: {e}",extra={"tags": {"event": "on_message_edit"}})
         print(f"Error updating message in database: {e}")
-   
+        errors_encountered_total.inc()
+
     await bot.process_commands(new_message)
 
 @bot.event
@@ -127,6 +134,7 @@ async def on_message_delete(message):
         print(f"Message with ID {discord_message_id} was marked deleted.")
         messages_deleted_total.inc()
     except Exception as e:
+        errors_encountered_total.inc()
         logger.error(f"Error deleting message from database: {e}")
         print(f"Error deleting message from database: {e}")
     await bot.process_commands(message)
