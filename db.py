@@ -26,13 +26,18 @@ def save_log( message, discord_user_id, discord_message_id, sent_at, in_text_val
     try:
         conn = connect_to_database()
         cur = conn.cursor()
+        ist = pytz.timezone('Asia/Kolkata')
+    
+        sent_at_ist = sent_at.astimezone(ist)
+        sent_at_date_ist = sent_at_ist.date()
+
         cur.execute(
             """
             INSERT INTO participation_logs (
                 message, discord_user_id, discord_message_id, sent_at, in_text_valid
             ) VALUES (%s, %s, %s, %s, %s)
             """,
-            (message, discord_user_id, discord_message_id, sent_at, in_text_valid)
+            (message, discord_user_id, discord_message_id, sent_at_date_ist, in_text_valid)
         )
         conn.commit()
         total_db_operations.inc()
