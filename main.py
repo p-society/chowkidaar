@@ -93,7 +93,7 @@ async def on_message_edit(old_message, new_message):
 
     logger.info(f"Edit event from {discord_user_id} for message id: { discord_message_id} received.",extra={"tags": {"event": "on_message_edit"}})
     try:
-        if is_in_time_bracket(timestamp) and update_log(discord_message_id, content, in_text_valid, updated_at):
+        if is_in_time_bracket(discord_user_id,timestamp) and update_log(discord_message_id, content, in_text_valid, updated_at):
             logger.info(f"Edit event from discord_user_id:{discord_user_id} for message id:{ discord_message_id} successfully patched in DB.",extra={"tags": {"event": "on_message_edit"}})
             
             await new_message.add_reaction("🛠️")
