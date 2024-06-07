@@ -68,9 +68,9 @@ def get_bracket_range(msg_timestamp):
     msg_sending_time= msg_timestamp.time() 
     msg_sending_date = msg_timestamp.date()
     # last second of a day aka the largest possible second of a day
-    final_second = time(23,59,59,999999)
+    midnight = time(23,59,59,999999)
 
-    if msg_sending_time <= final_second:
+    if INITIAL <= msg_sending_time <= midnight:
         start_date = msg_sending_date
         end_date = msg_sending_date + timedelta(days=1)
     else:
@@ -98,6 +98,6 @@ def can_send_message(discord_user_id, msg_sending_time):
 
 
 if __name__ == "__main__":
-    msg_timestamp = datetime.strptime("2021-06-04 16:29:59.999999", "%Y-%m-%d %H:%M:%S.%f")
+    msg_timestamp = datetime.strptime("2021-06-04 06:40:20.000000", "%Y-%m-%d %H:%M:%S.%f")
     start, end = get_bracket_range(msg_timestamp)
     print(start, end)
