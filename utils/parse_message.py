@@ -12,10 +12,10 @@ def extract_user_info(msg: str):
         tuple: (user_id, name) if found, (None, None) otherwise
     """
     machine = IdentityAutomata()
-    msg = msg.lower()
+    name = msg.split('\n')[0].strip()[5:]
     
     # Extract name (first line)
-    name = msg.split('\n')[0].strip()
+    msg = msg.lower()
     
     # Extract user ID - look for both formats
     # Format 1: "ID: B123456" or "ID - B123456"

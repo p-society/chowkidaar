@@ -113,15 +113,15 @@ def process_submissions(msg: str):
             if q.startswith("LC"):
                 question_id = q[3:]
                 if check_lc(question_id, lc_submissions):
-                    solved.append(idx)
+                    solved.append(question_id)
             elif q.startswith("CF"):
                 question_id = q[3:]
                 if check_cf(question_id, cf_submissions):
-                    solved.append(idx)
+                    solved.append(question_id)
         
         # Update database
         try:
-            save_cp_log(user_id, day_questions, name, lc_submissions, cf_submissions, day)
+            save_cp_log(user_id, name, solved, day)
         except Exception as e:
             return {"error": f"Database error: {str(e)}"}
         

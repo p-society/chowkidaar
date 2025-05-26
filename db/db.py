@@ -1,5 +1,4 @@
 import psycopg2
-from config import DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST
 from utils.parse_message import extract_user_info
 import pytz
 import datetime
@@ -82,7 +81,7 @@ def delete_log(discord_message_id):
             """
             UPDATE participation_logs
             SET deleted_at = %s
-            WHERE discord_message_id = %s
+            WHERE discord_message_id = '%s'
             """,
             (ist_time, discord_message_id),
         )
@@ -97,42 +96,31 @@ def delete_log(discord_message_id):
         conn.close()
 
 # CP logs related functions
-def save_cp_log(student_id, name, questions, leetcode_submissions, codeforces_submissions, day):
+def save_cp_log(student_id, name, solved_questions, day):
     """Save CP log to database"""
     conn = connect_to_database()
     if not conn:
         return
 
-    solved = []
-    for idx, q in enumerate(questions):
-        if q.startswith("LC"):
-            question_id = q[3:]
-            if check_lc(question_id, leetcode_submissions):
-                solved.append(idx)
-        elif q.startswith("CF"):
-            question_id = q[3:]
-            if check_cf(question_id, codeforces_submissions):
-                solved.append(idx)
 
     with conn.cursor() as cur:
         # Make sure user exists
         cur.execute('SELECT * FROM "student_list_2024" WHERE "stu_id" = %s;', (student_id,))
         if cur.fetchone() is None:
-            cur.execute(
-                'INSERT INTO "student_list_2024" ("stu_id", "name", "q1", "q2", "q3", "total_solved") VALUES (%s, %s, %s, %s, %s, %s);',
-                (student_id, name, [], [], [], 0)
-            )
-            conn.commit()
+            print("❌ User not found")
 
         # Update solved questions
-        for idx in solved:
-            field = f"Question {idx + 1}"
-            cur.execute(f'''
-                UPDATE "student_list_2024"
-                SET "{field}" = array_append("{field}", %s),
-                    "total_solved" = "total_solved" + 1
-                WHERE "stu_id" = %s AND NOT (%s = ANY("{field}"));
-            ''', (day, student_id, day))
+        try:
+            for i in range(len(solved_questions)):
+                field = f"q{i + 1}"
+                cur.execute(f'''
+                    UPDATE student_list_2024
+                    SET {field} = array_append({field}, '%s'),
+                        all_solved = array_append(all_solved, %s)
+                    WHERE stu_id = %s;
+                ''', (day, solved_questions[i], student_id))
+        except Exception as e:
+            print("Error: ", e)
 
         conn.commit()
         print("✅ Updated CP log successfully.")
@@ -237,9 +225,9 @@ def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) ->
                 # Insert new user
                 cur.execute('''
                     INSERT INTO student_list_2024 
-                    (stu_id, name, lc_handle, cf_handle, q1, q2, q3, total_solved)
+                    (stu_id, name, lc_handle, cf_handle, q1, q2, q3, all_solved)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (student_id, name, lc_handle, cf_handle, [], [], [], 0))
+                ''', (student_id, name, lc_handle, cf_handle, [], [], [], []))
                 
             conn.commit()
             total_db_operations.inc()
