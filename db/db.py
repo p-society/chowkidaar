@@ -55,7 +55,7 @@ def update_log(discord_message_id, message, in_text_valid, updated_at):
         cur.execute("""
             UPDATE participation_logs
             SET message = %s, in_text_valid = %s, updated_at = %s
-            WHERE discord_message_id = %s
+            WHERE discord_message_id = '%s'
         """, (message, in_text_valid, updated_at, discord_message_id))
         conn.commit()
         total_db_operations.inc()
