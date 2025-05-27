@@ -161,6 +161,9 @@ def get_ist_time():
     return ist_now
 
 def check_intext_validity(message):
+    '''
+    Checks if the student id present in message is present in the Database. That's all
+    '''
     conn = connect_to_database()
     if not conn:
         print("Failed to connect to database for intext validity check")
@@ -173,7 +176,7 @@ def check_intext_validity(message):
         if college_id:
             cur.execute("SELECT name FROM student_list_2024 WHERE stu_id=%s", (college_id,))
             full_name = cur.fetchone()
-            print("FUll name is  => ", full_name)
+            print("Full name is  => ", full_name)
             total_db_operations.inc()
             if full_name:
                 first_name = full_name[0].split()[0]
@@ -241,6 +244,71 @@ def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) ->
     finally:
         if conn:
             conn.close()
+
+
+def check_time_bracket(day, timestamp):
+    try:
+        conn = connect_to_database()
+        if not conn:
+            raise Exception
+        with conn.cursor() as cur:
+            # Check if the timestamp is present in timebracket for the day.
+            cur.execute('''
+                SELECT *
+                FROM day_brackets 
+                WHERE day = '%s'
+                AND %s BETWEEN initial_time AND final_time;
+            ''', (day, timestamp)
+            )
+
+            result = cur.fetchone()
+            cur.close()
+            conn.close()
+            if not result:
+               return False 
+            return True
+
+
+    except Exception as e:
+        print("Error in check_time_bracket", e)
+
+
+def flag_late(stu_id):
+    '''
+    Just flagging a student late if he msgs late.
+    '''
+    conn = connect_to_database()
+    if not conn:
+        raise Exception
+    with conn.cursor() as cur:
+        cur.execute('''
+            UPDATE student_list_2024
+            SET is_late=True
+            WHERE stu_id=%s
+        ''', (stu_id,))
+    conn.commit()
+    return 
+
+
+def get_bracket_range_db(day):
+    '''
+    Just returns INITIAL and FINAL time bracket values
+    '''
+    conn =connect_to_database()
+    if not conn:
+        raise Exception
+    with conn.cursor() as cur:
+        cur.execute('''
+            SELECT initial_time, final_time 
+            FROM day_brackets
+            WHERE day=%s
+        ''', (str(day),)
+        )
+        result = cur.fetchone()
+        if result:
+            return result[0], result[1]
+        return None
+
 
 if __name__ == "__main__":
     print(check_intext_validity(""))

@@ -1,7 +1,7 @@
 import logging as logger
 from datetime import datetime, time, timedelta
 
-from db.db import connect_to_database
+from db.db import check_time_bracket, connect_to_database, get_bracket_range_db
 from prometheus_client import Counter
 
 INITIAL = time(16,30)
@@ -18,24 +18,15 @@ messages_rejected_total_DUPLICATE = Counter(
 )
 
 
-def is_in_time_bracket(discord_user_id, msg_timestamp):
-    msg_time = msg_timestamp.time()
-
-    if INITIAL <= msg_time or msg_time <= FINAL:
-        return True
-    messages_rejected_total_TIME.inc()
-    logger.warning(
-        f"is in time bracket check failed for message sent at : {msg_timestamp} sent by discord_user_id: {discord_user_id} ",
-        extra={"tags": {"event": "on_message"}},
-    )
-    return False
+def is_in_time_bracket(day, msg_timestamp):
+    return check_time_bracket(day, msg_timestamp)
 
 
-def is_unique_in_time_bracket(discord_user_id, msg_timestamp):
+def is_unique_in_time_bracket(discord_user_id, msg_timestamp, day):
     conn = connect_to_database()
     cur = conn.cursor()
 
-    bracket_start, bracket_end = get_bracket_range(msg_timestamp)
+    bracket_start, bracket_end = get_bracket_range(msg_timestamp, day)
 
     cur.execute(
         """
@@ -46,14 +37,13 @@ def is_unique_in_time_bracket(discord_user_id, msg_timestamp):
         AND sent_at < %s
         AND deleted_at IS NULL
     """,
-        (discord_user_id, bracket_start, bracket_end),
+        (discord_user_id, str(bracket_start), str(bracket_end)),
     )
 
     result = cur.fetchone()
     cur.close()
     conn.close()
 
-    print(f"Query result: {result}")
 
     if result[0] > 0:
         messages_rejected_total_DUPLICATE.inc()
@@ -64,9 +54,10 @@ def is_unique_in_time_bracket(discord_user_id, msg_timestamp):
         return False
     return True
 
-def get_bracket_range(msg_timestamp):
+def get_bracket_range(msg_timestamp, day):
     msg_sending_time= msg_timestamp.time() 
     msg_sending_date = msg_timestamp.date()
+    initial, final = get_bracket_range_db(day)
     # last second of a day aka the largest possible second of a day
     midnight = time(23,59,59,999999)
 
@@ -83,12 +74,12 @@ def get_bracket_range(msg_timestamp):
     return bracket_start, bracket_end
 
 
-def can_send_message(discord_user_id, msg_sending_time):
+def can_send_message(discord_user_id, msg_sending_time, day):
 
-    if not is_in_time_bracket(discord_user_id, msg_sending_time):
+    if not is_in_time_bracket(day, msg_sending_time):
         return False
 
-    if not is_unique_in_time_bracket(discord_user_id, msg_sending_time):
+    if not is_unique_in_time_bracket(discord_user_id, msg_sending_time, day):
         return False
     logger.info(
         f"all time checks passed for message sent at : {msg_sending_time} sent by discord_user_id: {discord_user_id} ",

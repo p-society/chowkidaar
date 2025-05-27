@@ -1,7 +1,8 @@
+from os import times
 import discord
 from config import DISCORD_TOKEN, WATCHED_CHANNEL_ID
 from discord.ext import commands
-from db.db import save_log, check_intext_validity, update_log, delete_log
+from db.db import save_log, check_intext_validity, update_log, delete_log, flag_late
 from utils.time_check import can_send_message, is_in_time_bracket
 from prometheus_client import Counter , Gauge, start_http_server
 import logging as logger
@@ -48,6 +49,7 @@ async def on_message(message):
     timestamp = message.created_at
     logger.info(f"Received Message from discord_user_id {discord_user_id}",extra={"tags": {"event": "on_message"}})
 
+
     try:
         # Process CP submissions
         cp_result = process_submissions(content)
@@ -71,7 +73,8 @@ async def on_message(message):
             messages_sent_total.inc()
         
         # Handle daily log message
-        elif cp_result and "status" in cp_result and cp_result["status"] == "success":
+        if cp_result and "status" in cp_result and cp_result["status"] == "success" :
+            is_legal_time = is_in_time_bracket(cp_result['day'], timestamp)
             in_text_valid = check_intext_validity(content)
             daily_goal_status = len(cp_result['solved_questions'])/(cp_result['total_questions'])
             
@@ -91,8 +94,15 @@ async def on_message(message):
                 await message.add_reaction("❌")
                 logger.info(f"Added ❌ reaction", extra={"tags": {"event": "on_message"}})
 
+            if not is_legal_time:
+                flag_late(cp_result['user_id'])
+                logger.info(f"CP submissions processed with late submission for user {discord_user_id}.", extra={"tags": {"event": "on_message"}})
+                await message.add_reaction("⏰")
+                logger.info(f"Added ⏰ reaction", extra={"tags": {"event": "on_message"}})
+
+
             # Check message validity and save to database only for daily logs
-            if can_send_message(discord_user_id, timestamp):
+            if can_send_message(discord_user_id, timestamp, cp_result['day']):
                 logger.info(f"discord_message_id :{discord_message_id} can be stored in DB.",extra={"tags": {"event": "on_message"}})
                 save_log(
                     content,
@@ -124,6 +134,7 @@ async def on_message(message):
             else:
                 await message.add_reaction("⚠️")  # Other errors
                 logger.info(f"Added ⚠️ reaction for other errors", extra={"tags": {"event": "on_message"}})
+
 
     except Exception as e:
         logger.error(f"Error processing message: {e}",extra={"tags": {"event": "on_message"}})
