@@ -50,14 +50,12 @@ def create_daily_question_message(day_number, questions_list):
 
 # Calculate days since start date
 def get_current_day(start_date):
-    today = datetime.datetime.now(pytz.timezone('Asia/Kolkata')).date()
+    today = datetime.datetime.now(pytz.timezone.utc).date()
     delta = (today - start_date).days + 1  # +1 because we want day 1, 2, 3, etc.
     return delta if delta > 0 else 0
 
 # Get the first day of next month
 def get_start_date():
-    now = datetime.datetime.now()
-    print(f"Current date: {now}")
     return datetime.datetime(2025, 5, 29, tzinfo=datetime.timezone.utc).date()
 
 
