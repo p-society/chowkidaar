@@ -7,6 +7,7 @@ from utils.time_check import can_send_message, is_in_time_bracket
 from prometheus_client import Counter , Gauge, start_http_server
 import logging as logger
 from db.mark_cp_logs import process_submissions  # Add CP processing import
+from daily_questions import DailyQuestionScheduler  # Add this import
 
 intents = discord.Intents.default()
 intents.messages = True  # Ensure the bot can read messages
@@ -25,10 +26,6 @@ errors_encountered_total = Counter('errors_encountered_total','Total Errors Enco
 
 start_http_server(8000) 
 
-@bot.event
-async def on_ready(): 
-    logger.info(f"Bot is ready. Logged in as {bot.user}",extra={"tags": {"event": "on_ready"}})
-    print(f"Bot is ready. Logged in as {bot.user}")
 
 @bot.event
 async def on_message(message):
@@ -214,5 +211,13 @@ async def on_message_delete(message):
         logger.error(f"Error deleting message from database: {e}")
         print(f"Error deleting message from database: {e}")
     await bot.process_commands(message)
-
+@bot.event
+async def on_ready():
+    logger.info(f"Bot is ready. Logged in as {bot.user}", extra={"tags": {"event": "on_ready"}})
+    print(f"Bot is ready. Logged in as {bot.user}")
+    
+    # Start the daily question scheduler
+    question_scheduler = DailyQuestionScheduler(bot, WATCHED_CHANNEL_ID)
+    logger.info("Daily question scheduler started", extra={"tags": {"event": "scheduler_start"}})
+    
 bot.run(DISCORD_TOKEN)
