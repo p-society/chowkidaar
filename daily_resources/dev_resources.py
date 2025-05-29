@@ -55,7 +55,6 @@ class DevResourcesScheduler:
         try:
             # Get pinned messages
             pinned_messages = await channel.pins()
-            print(f"Found {len(pinned_messages)} pinned messages in channel {channel.id}")
             # Look for messages from our bot that match our format
             bot_id = self.bot.user.id
             for pinned in pinned_messages:

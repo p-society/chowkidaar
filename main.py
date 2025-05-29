@@ -219,7 +219,6 @@ async def on_ready():
     
     # Start the daily question scheduler
     start_date = get_start_date()  # Import this from daily_questions
-    print(f"Starting date for daily questions: {start_date}")
     question_scheduler = DailyQuestionScheduler(bot, WATCHED_CHANNEL_ID)
     dev_resources_scheduler = DevResourcesScheduler(bot, WATCHED_CHANNEL_ID, start_date)
     

@@ -56,8 +56,6 @@ def get_current_day(start_date):
 
 # Get the first day of next month
 def get_start_date():
-    now = datetime.datetime.now()
-    print(f"Current date: {now}")
     return datetime.datetime(2025, 5, 25, tzinfo=datetime.timezone.utc).date()
 
 
