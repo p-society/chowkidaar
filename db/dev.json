@@ -1,0 +1,152 @@
+{
+    "1": [
+        {
+            "type": "youtube",
+            "title": "Building RESTful APIs with Flask",
+            "link": "https://www.youtube.com/watch?v=MwZwr5Tvyxo"
+        },
+        {
+            "type": "blog",
+            "title": "Git Workflow Best Practices",
+            "link": "https://www.atlassian.com/git/tutorials/comparing-workflows"
+        }
+    ],
+    "2": [
+        {
+            "type": "github",
+            "title": "Clean Code JavaScript",
+            "link": "https://github.com/ryanmcdermott/clean-code-javascript"
+        },
+        {
+            "type": "youtube",
+            "title": "Docker for Beginners",
+            "link": "https://www.youtube.com/watch?v=3c-iBn73dDE"
+        }
+    ],
+    "3": [
+        {
+            "type": "blog",
+            "title": "System Design Primer",
+            "link": "https://github.com/donnemartin/system-design-primer"
+        },
+        {
+            "type": "youtube",
+            "title": "gRPC Crash Course",
+            "link": "https://www.youtube.com/watch?v=Yw4rkaTc0f8"
+        },
+        {
+            "type": "article",
+            "title": "Microservices Architecture",
+            "link": "https://martinfowler.com/articles/microservices.html"
+        }
+    ],
+    "4": [
+        {
+            "type": "youtube",
+            "title": "React Hooks Tutorial",
+            "link": "https://www.youtube.com/watch?v=TNhaISOUy6Q"
+        },
+        {
+            "type": "blog",
+            "title": "TypeScript Design Patterns",
+            "link": "https://refactoring.guru/design-patterns/typescript"
+        }
+    ],
+    "5": [
+        {
+            "type": "github",
+            "title": "Public APIs",
+            "link": "https://github.com/public-apis/public-apis"
+        },
+        {
+            "type": "blog",
+            "title": "Database Normalization Explained",
+            "link": "https://www.essentialsql.com/get-ready-to-learn-sql-database-normalization-explained-in-simple-english/"
+        }
+    ],
+    "6": [
+        {
+            "type": "youtube",
+            "title": "Advanced CSS and Sass",
+            "link": "https://www.youtube.com/watch?v=9Pb9MWoqrdM"
+        },
+        {
+            "type": "blog",
+            "title": "JWT Authentication Best Practices",
+            "link": "https://blog.logrocket.com/jwt-authentication-best-practices/"
+        },
+        {
+            "type": "github",
+            "title": "33 JavaScript Concepts",
+            "link": "https://github.com/leonardomso/33-js-concepts"
+        }
+    ],
+    "7": [
+        {
+            "type": "youtube",
+            "title": "Redis Crash Course",
+            "link": "https://www.youtube.com/watch?v=jgpVdJB2sKQ"
+        },
+        {
+            "type": "article",
+            "title": "Building a Scalable Web App with CQRS Pattern",
+            "link": "https://blog.bitsrc.io/building-a-scalable-web-app-with-cqrs-pattern-5a471812e9ec"
+        }
+    ],
+    "8": [
+        {
+            "type": "github",
+            "title": "JavaScript Algorithms",
+            "link": "https://github.com/trekhleb/javascript-algorithms"
+        },
+        {
+            "type": "youtube",
+            "title": "GraphQL Full Course",
+            "link": "https://www.youtube.com/watch?v=ed8SzALpx1Q"
+        },
+        {
+            "type": "blog",
+            "title": "Web Security Fundamentals",
+            "link": "https://portswigger.net/web-security"
+        }
+    ],
+    "9": [
+        {
+            "type": "youtube",
+            "title": "Next.js in 100 Seconds + Full Tutorial",
+            "link": "https://www.youtube.com/watch?v=Sklc_fQBmcs"
+        },
+        {
+            "type": "article",
+            "title": "Monolith vs Microservices",
+            "link": "https://www.atlassian.com/microservices/microservices-architecture/microservices-vs-monolith"
+        },
+        {
+            "type": "github",
+            "title": "Node.js Best Practices",
+            "link": "https://github.com/goldbergyoni/nodebestpractices"
+        }
+    ],
+    "10": [
+        {
+            "type": "youtube",
+            "title": "Kubernetes Explained in 100 Seconds",
+            "link": "https://www.youtube.com/watch?v=PziYflu8cB8"
+        },
+        {
+            "type": "blog",
+            "title": "Design Patterns in Python",
+            "link": "https://refactoring.guru/design-patterns/python"
+        },
+        {
+            "type": "github",
+            "title": "Tech Interview Handbook",
+            "link": "https://github.com/yangshun/tech-interview-handbook"
+        },
+        {
+            "type": "article",
+            "title": "Serverless Architecture Explained",
+            "link": "https://www.twilio.com/blog/2017/05/introducing-serverless-framework-v1.html"
+        }
+    ]
+}

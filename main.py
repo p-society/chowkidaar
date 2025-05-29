@@ -7,7 +7,8 @@ from utils.time_check import can_send_message, is_in_time_bracket
 from prometheus_client import Counter , Gauge, start_http_server
 import logging as logger
 from db.mark_cp_logs import process_submissions  # Add CP processing import
-from daily_questions import DailyQuestionScheduler  # Add this import
+from daily_resources.daily_questions import DailyQuestionScheduler, get_start_date  # Add this import
+from daily_resources.dev_resource import DevResourcesScheduler  
 
 intents = discord.Intents.default()
 intents.messages = True  # Ensure the bot can read messages
@@ -217,7 +218,11 @@ async def on_ready():
     print(f"Bot is ready. Logged in as {bot.user}")
     
     # Start the daily question scheduler
+    start_date = get_start_date()  # Import this from daily_questions
+    print(f"Starting date for daily questions: {start_date}")
     question_scheduler = DailyQuestionScheduler(bot, WATCHED_CHANNEL_ID)
-    logger.info("Daily question scheduler started", extra={"tags": {"event": "scheduler_start"}})
+    dev_resources_scheduler = DevResourcesScheduler(bot, WATCHED_CHANNEL_ID, start_date)
+    
+    logger.info("Daily schedulers started", extra={"tags": {"event": "scheduler_start"}})
     
 bot.run(DISCORD_TOKEN)

@@ -58,7 +58,7 @@ def get_current_day(start_date):
 def get_start_date():
     now = datetime.datetime.now()
     print(f"Current date: {now}")
-    return datetime.datetime(2025, 5, 22, tzinfo=datetime.timezone.utc).date()
+    return datetime.datetime(2025, 5, 25, tzinfo=datetime.timezone.utc).date()
 
 
 class DailyQuestionScheduler:
@@ -73,7 +73,7 @@ class DailyQuestionScheduler:
         self.daily_task.cancel()
     
     # This task runs every day at specified time
-    @tasks.loop(time=datetime.time(hour=0, minute=30, tzinfo=datetime.timezone.utc))
+    @tasks.loop(time=datetime.time(hour=10, minute=1, tzinfo=datetime.timezone.utc))
     async def daily_task(self):
         try:
             day = get_current_day(self.start_date)
@@ -86,9 +86,14 @@ class DailyQuestionScheduler:
                     if channel:
                         questions_list = self.questions[day_str]
                         message = create_daily_question_message(day, questions_list)
-                        await channel.send(message)
-                        logger.info(f"Sent day {day} questions to channel", 
-                                   extra={"tags": {"event": "daily_question"}})
+                        cp_message = await channel.send(message)
+                    try:
+                        await cp_message.pin()
+                        logger.info(f"Sent day {day} dev questions to channel", 
+                                  extra={"tags": {"event": "daily_resources"}})
+                    except Exception as pin_error:
+                        logger.error(f"Failed to pin message for day {day}: {pin_error}", 
+                                  extra={"tags": {"event": "daily_resources"}})
                     else:
                         logger.error(f"Channel {self.channel_id} not found", 
                                    extra={"tags": {"event": "daily_question"}})
