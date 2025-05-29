@@ -8,7 +8,7 @@ from prometheus_client import Counter , Gauge, start_http_server
 import logging as logger
 from db.mark_cp_logs import process_submissions  # Add CP processing import
 from daily_resources.daily_questions import DailyQuestionScheduler, get_start_date  # Add this import
-from daily_resources.dev_resource import DevResourcesScheduler  
+from daily_resources.dev_resources import DevResourcesScheduler  
 
 intents = discord.Intents.default()
 intents.messages = True  # Ensure the bot can read messages
