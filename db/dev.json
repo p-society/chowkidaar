@@ -1,15 +1,21 @@
 {
     "1": [
         {
+            "type": "tutorial",
+            "title": "HTML Fundamentals - Complete Guide",
+            "link": "https://www.w3schools.com/html/default.asp"
+        },
+        {
             "type": "youtube",
-            "title": "Building RESTful APIs with Flask",
-            "link": "https://www.youtube.com/watch?v=MwZwr5Tvyxo"
+            "title": "CSS Crash Course for Absolute Beginners",
+            "link": "https://www.youtube.com/watch?v=yfoY53QXEnI"
         },
         {
             "type": "blog",
             "title": "Git Workflow Best Practices",
             "link": "https://www.atlassian.com/git/tutorials/comparing-workflows"
         }
+
     ],
     "2": [
         {
@@ -19,8 +25,8 @@
         },
         {
             "type": "youtube",
-            "title": "Docker for Beginners",
-            "link": "https://www.youtube.com/watch?v=3c-iBn73dDE"
+            "title": "FastAPI Tutorial - Building APIs with Python",
+            "link": "https://www.youtube.com/watch?v=7t2alSnE2-I"
         }
     ],
     "3": [
