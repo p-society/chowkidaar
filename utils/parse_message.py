@@ -43,7 +43,7 @@ def extract_user_lc_cf_id(msg: str):
     Returns:
         dict: A dictionary containing 'lc' and 'cf' keys with their respective IDs
     """
-    msg = msg.lower()
+    # msg = msg.lower()
     
     result = {'lc': None, 'cf': None}
     
