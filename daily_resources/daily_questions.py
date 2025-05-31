@@ -56,7 +56,7 @@ def get_current_day(start_date):
 
 # Get the first day of next month
 def get_start_date():
-    return datetime.datetime(2025, 5, 25, tzinfo=datetime.timezone.utc).date()
+    return datetime.datetime(2025, 6, 1, tzinfo=datetime.timezone.utc).date()
 
 
 class DailyQuestionScheduler:
@@ -71,7 +71,7 @@ class DailyQuestionScheduler:
         self.daily_task.cancel()
     
     # This task runs every day at specified time
-    @tasks.loop(time=datetime.time(hour=10, minute=1, tzinfo=datetime.timezone.utc))
+    @tasks.loop(time=datetime.time(hour=0, minute=5, tzinfo=datetime.timezone.utc))
     async def daily_task(self):
         try:
             day = get_current_day(self.start_date)
