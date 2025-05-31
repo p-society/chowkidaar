@@ -39,7 +39,6 @@ def process_submissions(msg: str):
     # Extract basic information
     user_id, name = extract_user_info(msg)
     platform_ids = extract_user_lc_cf_id(msg)
-    
     # Validate basic data
     if not user_id:
         return {"error": "Could not extract user ID"}
