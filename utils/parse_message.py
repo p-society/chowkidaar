@@ -51,15 +51,15 @@ def extract_user_lc_cf_id(msg: str):
     # Format 1: "LC: username" or "LC - username"
     # Format 2: "lc-username"
     lc_patterns = [
-        r'lc:\s*(\w+)',
-        r'lc\s*-\s*(\w+)',
-        r'lc-(\w+)'
+        r'(?i)lc:\s*(\w+)',
+        r'(?i)lc\s*-\s*(\w+)',
+        r'(?i)lc-(\w+)'
     ]
     
     cf_patterns = [
-        r'cf:\s*(\w+)',
-        r'cf\s*-\s*(\w+)',
-        r'cf-(\w+)'
+        r'(?i)cf:\s*(\w+)',
+        r'(?i)cf\s*-\s*(\w+)',
+        r'(?i)cf-(\w+)'
     ]
     
     for pattern in lc_patterns:
