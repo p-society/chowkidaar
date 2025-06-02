@@ -32,18 +32,18 @@
     "3": [
         {
             "type": "blog",
-            "title": "System Design Primer",
-            "link": "https://github.com/donnemartin/system-design-primer"
+            "title": "Open Source Guide: How to Contribute to Open Source",
+            "link": "https://opensource.guide/how-to-contribute/"
         },
         {
-            "type": "youtube",
-            "title": "gRPC Crash Course",
-            "link": "https://www.youtube.com/watch?v=Yw4rkaTc0f8"
+            "type": "github",
+            "title": "Professional Programming: Collection of Full-Stack Resources",
+            "link": "https://github.com/charlax/professional-programming"
         },
         {
             "type": "article",
-            "title": "Microservices Architecture",
-            "link": "https://martinfowler.com/articles/microservices.html"
+            "title": "Just-fucking-code",
+            "link": "https://www.justfuckingcode.com/"
         }
     ],
     "4": [
