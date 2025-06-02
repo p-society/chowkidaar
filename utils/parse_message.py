@@ -1,4 +1,3 @@
-from utils.dfa import IdentityAutomata
 import re
 
 def extract_user_info(msg: str):
@@ -11,7 +10,6 @@ def extract_user_info(msg: str):
     Returns:
         tuple: (user_id, name) if found, (None, None) otherwise
     """
-    machine = IdentityAutomata()
     name = msg.split('\n')[0].strip()[5:]
     
     # Extract name (first line)
@@ -30,8 +28,7 @@ def extract_user_info(msg: str):
         match = re.search(pattern, msg)
         if match:
             college_id = match.group(1)
-            if machine.is_accepted(college_id[1:]):
-                return college_id, name
+            return college_id, name
                 
     return None, None
 
@@ -51,15 +48,15 @@ def extract_user_lc_cf_id(msg: str):
     # Format 1: "LC: username" or "LC - username"
     # Format 2: "lc-username"
     lc_patterns = [
-        r'lc:\s*(\w+)',
-        r'lc\s*-\s*(\w+)',
-        r'lc-(\w+)'
+        r'(?i)lc:\s*(\w+)',
+        r'(?i)lc\s*-\s*(\w+)',
+        r'(?i)lc-(\w+)'
     ]
     
     cf_patterns = [
-        r'cf:\s*(\w+)',
-        r'cf\s*-\s*(\w+)',
-        r'cf-(\w+)'
+        r'(?i)cf:\s*(\w+)',
+        r'(?i)cf\s*-\s*(\w+)',
+        r'(?i)cf-(\w+)'
     ]
     
     for pattern in lc_patterns:
