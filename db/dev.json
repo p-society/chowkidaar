@@ -56,6 +56,11 @@
             "type": "blog",
             "title": "TypeScript Design Patterns",
             "link": "https://refactoring.guru/design-patterns/typescript"
+        },
+        {
+            "type": "blog",
+            "title": "JWT Authentication Best Practices",
+            "link": "https://blog.logrocket.com/jwt-authentication-best-practices/"
         }
     ],
     "5": [
