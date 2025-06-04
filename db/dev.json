@@ -70,9 +70,14 @@
             "link": "https://github.com/public-apis/public-apis"
         },
         {
+            "type": "github",
+            "title": "33 JavaScript Concepts",
+            "link": "https://github.com/leonardomso/33-js-concepts"
+        },
+        {
             "type": "blog",
-            "title": "Database Normalization Explained",
-            "link": "https://www.essentialsql.com/get-ready-to-learn-sql-database-normalization-explained-in-simple-english/"
+            "title": "Beginner's Guide to Backend Development",
+            "link": "https://learntocodewith.me/posts/backend-development/"
         }
     ],
     "6": [
