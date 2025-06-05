@@ -83,18 +83,18 @@
     "6": [
         {
             "type": "youtube",
-            "title": "Advanced CSS and Sass",
-            "link": "https://www.youtube.com/watch?v=9Pb9MWoqrdM"
+            "title": "Next.js in 100 Seconds + Full Tutorial",
+            "link": "https://www.youtube.com/watch?v=Sklc_fQBmcs"
         },
         {
-            "type": "blog",
-            "title": "JWT Authentication Best Practices",
-            "link": "https://blog.logrocket.com/jwt-authentication-best-practices/"
+            "type": "article",
+            "title": "Monolith vs Microservices",
+            "link": "https://www.atlassian.com/microservices/microservices-architecture/microservices-vs-monolith"
         },
         {
             "type": "github",
-            "title": "33 JavaScript Concepts",
-            "link": "https://github.com/leonardomso/33-js-concepts"
+            "title": "Node.js Best Practices",
+            "link": "https://github.com/goldbergyoni/nodebestpractices"
         }
     ],
     "7": [
