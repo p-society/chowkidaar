@@ -99,14 +99,19 @@
     ],
     "7": [
         {
-            "type": "youtube",
-            "title": "Redis Crash Course",
-            "link": "https://www.youtube.com/watch?v=jgpVdJB2sKQ"
+            "type": "blog",
+            "title": "AWS Basics for Beginners",
+            "link": "https://aws.amazon.com/getting-started/fundamentals-core-concepts/"
         },
         {
-            "type": "article",
-            "title": "Building a Scalable Web App with CQRS Pattern",
-            "link": "https://blog.bitsrc.io/building-a-scalable-web-app-with-cqrs-pattern-5a471812e9ec"
+            "type": "blog",
+            "title": "Introduction to Azure Cloud Services",
+            "link": "https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/getting-started"
+        },
+        {
+            "type": "blog",
+            "title": "Google Cloud Platform Basics",
+            "link": "https://cloud.google.com/docs/overview"
         }
     ],
     "8": [
