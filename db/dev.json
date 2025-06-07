@@ -116,14 +116,9 @@
     ],
     "8": [
         {
-            "type": "github",
-            "title": "JavaScript Algorithms",
-            "link": "https://github.com/trekhleb/javascript-algorithms"
-        },
-        {
-            "type": "youtube",
-            "title": "GraphQL Full Course",
-            "link": "https://www.youtube.com/watch?v=ed8SzALpx1Q"
+            "type": "blog",
+            "title": "REST vs tRPC vs gRPC vs GraphQL: Comparing API Paradigms",
+            "link": "https://medium.com/@thiwankajayasiri/trpc-grpc-graphql-or-rest-when-to-use-what-fb16fb188268"
         },
         {
             "type": "blog",
