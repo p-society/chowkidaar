@@ -128,19 +128,19 @@
     ],
     "9": [
         {
-            "type": "youtube",
-            "title": "Next.js in 100 Seconds + Full Tutorial",
-            "link": "https://www.youtube.com/watch?v=Sklc_fQBmcs"
+            "type": "blog",
+            "title": "Build Your First Android App - Android Developers",
+            "link": "https://developer.android.com/get-started/overview"
         },
         {
-            "type": "article",
-            "title": "Monolith vs Microservices",
-            "link": "https://www.atlassian.com/microservices/microservices-architecture/microservices-vs-monolith"
+            "type": "blog",
+            "title": "Beginner's Guide to Mobile App Development",
+            "link": "https://www.appmysite.com/blog/the-ultimate-guide-to-mobile-app-development/"
         },
         {
-            "type": "github",
-            "title": "Node.js Best Practices",
-            "link": "https://github.com/goldbergyoni/nodebestpractices"
+            "type": "blog",
+            "title": "What is Low-Level Design? - GeeksforGeeks",
+            "link": "https://www.geeksforgeeks.org/what-is-low-level-design-or-lld-learn-system-design/"
         }
     ],
     "10": [
