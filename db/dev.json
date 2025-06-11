@@ -185,18 +185,23 @@
     "12": [
         {
             "type": "youtube",
-            "title": "HTML & CSS Full Course | Web Development for Beginners",
-            "link": "https://www.youtube.com/watch?v=Eb3lOiukwAQ"
+            "title": "Blockchain Technology Explained",
+            "link": "https://www.youtube.com/watch?v=qOVAbKKSH10"
         },
         {
             "type": "blog",
-            "title": "Beginner's Guide to Backend Development",
-            "link": "https://learntocodewith.me/posts/backend-development/"
+            "title": "Introduction to Smart Contracts",
+            "link": "https://ethereum.org/en/developers/docs/smart-contracts/"
         },
         {
-            "type": "blog",
-            "title": "DevOps Tutorial - GeeksforGeeks",
-            "link": "https://www.geeksforgeeks.org/devops-tutorial/"
+            "type": "github",
+            "title": "Solidity by Example",
+            "link": "https://github.com/raineorshine/solidity-by-example"
+        },
+        {
+            "type": "article",
+            "title": "Web3 Architecture and How It Compares to Traditional Web Apps",
+            "link": "https://www.freecodecamp.org/news/web3-architecture-how-it-works-and-how-it-compares-to-web2/"
         }
     ],
     "13": [
