@@ -241,18 +241,18 @@
     "15": [
         {
             "type": "youtube",
-            "title": "Back-End Web Development (Tutorial for Beginners)",
-            "link": "https://www.youtube.com/watch?v=1oTuMPIwHmk"
+            "title": "Data Engineering Crash Course",
+            "link": "https://www.youtube.com/watch?v=fXk8FoaVLp0"
         },
         {
             "type": "blog",
-            "title": "Beginner's Guide to Mobile App Development",
-            "link": "https://www.appmysite.com/blog/the-ultimate-guide-to-mobile-app-development/"
+            "title": "Data Visualization with D3.js",
+            "link": "https://www.freecodecamp.org/news/learn-to-create-a-line-chart-using-d3-js-4f43f1ee716b/"
         },
         {
-            "type": "blog",
-            "title": "Cyber Security Tutorial - W3Schools",
-            "link": "https://www.w3schools.com/cybersecurity/"
+            "type": "github",
+            "title": "Awesome Data Engineering",
+            "link": "https://github.com/igorbarinov/awesome-data-engineering"
         }
     ],
     "16": [
