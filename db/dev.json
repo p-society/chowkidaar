@@ -257,19 +257,14 @@
     ],
     "16": [
         {
-            "type": "github",
-            "title": "awesome-low-level-design",
-            "link": "https://github.com/ashishps1/awesome-low-level-design"
+            "type": "youtube",
+            "title": "Natural Language Processing With Python and NLTK",
+            "link": "https://www.youtube.com/watch?v=X2vAabgKiuM"
         },
         {
             "type": "blog",
-            "title": "Cloud Computing Tutorial for Beginners - Simplilearn",
-            "link": "https://www.simplilearn.com/tutorials/cloud-computing-tutorial"
-        },
-        {
-            "type": "blog",
-            "title": "The GNU Manifesto Turns Thirty",
-            "link": "https://www.newyorker.com/business/currency/the-gnu-manifesto-turns-thirty"
+            "title": "OpenAI API Tutorial - How to Build AI Applications",
+            "link": "https://platform.openai.com/docs/tutorials"
         }
     ],
     "17": [
@@ -397,16 +392,7 @@
         }
     ],
     "24": [
-        {
-            "type": "youtube",
-            "title": "Natural Language Processing With Python and NLTK",
-            "link": "https://www.youtube.com/watch?v=X2vAabgKiuM"
-        },
-        {
-            "type": "blog",
-            "title": "OpenAI API Tutorial - How to Build AI Applications",
-            "link": "https://platform.openai.com/docs/tutorials"
-        },
+
         {
             "type": "github",
             "title": "Hugging Face Transformers",
