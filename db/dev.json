@@ -269,19 +269,14 @@
     ],
     "17": [
         {
-            "type": "blog",
-            "title": "Machine Learning Tutorial - GeeksforGeeks",
-            "link": "https://www.geeksforgeeks.org/machine-learning/"
+            "type": "github",
+            "title": "Hugging Face Transformers",
+            "link": "https://github.com/huggingface/transformers"
         },
         {
-            "type": "blog",
-            "title": "An Introduction To Web Development - CareerFoundry",
-            "link": "https://careerfoundry.com/en/tutorials/web-development-for-beginners/introduction-to-web-development"
-        },
-        {
-            "type": "blog",
-            "title": "DevOps Tutorial | Microsoft Azure",
-            "link": "https://azure.microsoft.com/en-us/solutions/devops/tutorial"
+            "type": "article",
+            "title": "Introduction to Large Language Models",
+            "link": "https://blog.google/technology/ai/introduction-to-large-language-models/"
         }
     ],
     "18": [
