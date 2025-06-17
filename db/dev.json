@@ -281,19 +281,14 @@
     ],
     "18": [
         {
-            "type": "blog",
-            "title": "How to Become a Mobile App Developer - Buildfire",
-            "link": "https://buildfire.com/become-mobile-app-developer/"
+            "type": "github",
+            "title": "Solidity by Example",
+            "link": "https://github.com/raineorshine/solidity-by-example"
         },
         {
-            "type": "blog",
-            "title": "Cyber Security Training for Beginners | Edureka",
-            "link": "https://www.youtube.com/playlist?list=PL9ooVrP1hQOGPQVeapGsJCktzIO4DtI4_"
-        },
-        {
-            "type": "blog",
-            "title": "Steps and Resources to learn LLD as a beginner | sudocode",
-            "link": "https://www.youtube.com/watch?v=B3zrIwz_t4M"
+            "type": "article",
+            "title": "Web3 Architecture and How It Compares to Traditional Web Apps",
+            "link": "https://www.freecodecamp.org/news/web3-architecture-how-it-works-and-how-it-compares-to-web2/"
         }
     ],
     "19": [
@@ -357,16 +352,6 @@
             "type": "blog",
             "title": "Introduction to Smart Contracts",
             "link": "https://ethereum.org/en/developers/docs/smart-contracts/"
-        },
-        {
-            "type": "github",
-            "title": "Solidity by Example",
-            "link": "https://github.com/raineorshine/solidity-by-example"
-        },
-        {
-            "type": "article",
-            "title": "Web3 Architecture and How It Compares to Traditional Web Apps",
-            "link": "https://www.freecodecamp.org/news/web3-architecture-how-it-works-and-how-it-compares-to-web2/"
         }
     ],
     "23": [
