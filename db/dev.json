@@ -293,19 +293,14 @@
     ],
     "19": [
         {
-            "type": "blog",
-            "title": "Cloud Computing Tutorial - GeeksforGeeks",
-            "link": "https://www.geeksforgeeks.org/cloud-computing-tutorial/"
+            "type": "tutorial",
+            "title": "Python Advanced Data Structures and Algorithms",
+            "link": "https://realpython.com/python-data-structures/"
         },
         {
-            "type": "blog",
-            "title": "What is Low-Level Design? - GeeksforGeeks",
-            "link": "https://www.geeksforgeeks.org/what-is-low-level-design-or-lld-learn-system-design/"
-        },
-        {
-            "type": "blog",
-            "title": "The Future of American Industry Depends on Open Source Tech",
-            "link": "https://www.wired.com/story/opinon-the-future-of-american-industry-depends-on-open-source-tech"
+            "type": "github",
+            "title": "Modern JavaScript Tutorial",
+            "link": "https://javascript.info/"
         }
     ],
     "20": [
