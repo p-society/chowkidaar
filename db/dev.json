@@ -323,18 +323,18 @@
         "21": [
         {
             "type": "youtube",
-            "title": "Data Engineering Crash Course",
-            "link": "https://www.youtube.com/watch?v=fXk8FoaVLp0"
-        },
-        {
-            "type": "blog",
-            "title": "Data Visualization with D3.js",
-            "link": "https://www.freecodecamp.org/news/learn-to-create-a-line-chart-using-d3-js-4f43f1ee716b/"
+            "title": "SQL for Data Analysis - Full Course for Beginners",
+            "link": "https://www.youtube.com/watch?v=HXV3zeQKqGY"
         },
         {
             "type": "github",
-            "title": "Awesome Data Engineering",
-            "link": "https://github.com/igorbarinov/awesome-data-engineering"
+            "title": "Awesome Big Data",
+            "link": "https://github.com/onurakpolat/awesome-bigdata"
+        },
+        {
+            "type": "blog",
+            "title": "Data Engineering Project Ideas with Tutorials",
+            "link": "https://www.startdataengineering.com/post/data-engineering-project-for-beginners-batch-edition/"
         }
     ],
     "22": [
