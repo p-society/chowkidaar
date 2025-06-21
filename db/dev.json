@@ -340,43 +340,42 @@
     "22": [
         {
             "type": "youtube",
-            "title": "Blockchain Technology Explained",
-            "link": "https://www.youtube.com/watch?v=qOVAbKKSH10"
+            "title": "Introduction to Quantum Computing",
+            "link": "https://www.youtube.com/watch?v=JRIPV0dPAd4"
         },
         {
             "type": "blog",
-            "title": "Introduction to Smart Contracts",
-            "link": "https://ethereum.org/en/developers/docs/smart-contracts/"
+            "title": "Cybersecurity Fundamentals: A Comprehensive Guide",
+            "link": "https://www.cisco.com/c/en/us/products/security/what-is-cybersecurity.html"
         }
     ],
     "23": [
         {
             "type": "youtube",
-            "title": "Software Testing Tutorial - Learn Unit Testing and Integration Testing",
-            "link": "https://www.youtube.com/watch?v=7r4xVDI2vho"
+            "title": "Augmented Reality Development for Beginners",
+            "link": "https://www.youtube.com/watch?v=WzfDo2Wpxks"
         },
         {
             "type": "blog",
-            "title": "Test-Driven Development (TDD) - GeeksforGeeks",
-            "link": "https://www.geeksforgeeks.org/test-driven-development-tdd/"
+            "title": "Edge Computing: The Future of Distributed Systems",
+            "link": "https://www.ibm.com/cloud/what-is-edge-computing"
         },
         {
             "type": "github",
-            "title": "The Practical Test Pyramid",
-            "link": "https://martinfowler.com/articles/practical-test-pyramid.html"
+            "title": "Awesome IoT Projects",
+            "link": "https://github.com/phodal/awesome-iot"
         }
     ],
     "24": [
-
         {
             "type": "github",
-            "title": "Hugging Face Transformers",
-            "link": "https://github.com/huggingface/transformers"
+            "title": "Computer Vision Resources and Projects",
+            "link": "https://github.com/jbhuang0604/awesome-computer-vision"
         },
         {
             "type": "article",
-            "title": "Introduction to Large Language Models",
-            "link": "https://blog.google/technology/ai/introduction-to-large-language-models/"
+            "title": "The Ethics of Artificial Intelligence and Machine Learning",
+            "link": "https://hai.stanford.edu/resources/ethics-ai"
         }
     ],
     "25": [
