@@ -71,7 +71,7 @@ class DailyQuestionScheduler:
         self.daily_task.cancel()
     
     # This task runs every day at specified time
-    @tasks.loop(time=datetime.time(hour=1, minute=23, tzinfo=datetime.timezone.utc))
+    @tasks.loop(time=datetime.time(hour=1, minute=30, tzinfo=datetime.timezone.utc))
     async def daily_task(self):
         try:
             day = get_current_day(self.start_date)

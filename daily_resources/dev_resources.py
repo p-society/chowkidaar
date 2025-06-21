@@ -73,7 +73,7 @@ class DevResourcesScheduler:
         self.daily_resources_task.cancel()
     
     # This task runs every day at 6:15 AM IST (00:45 UTC)
-    @tasks.loop(time=datetime.time(hour=1, minute=23, tzinfo=datetime.timezone.utc))
+    @tasks.loop(time=datetime.time(hour=1, minute=30, tzinfo=datetime.timezone.utc))
     async def daily_resources_task(self):
         try:
             # Calculate which day we're on
