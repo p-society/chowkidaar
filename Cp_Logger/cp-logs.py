@@ -9,7 +9,7 @@ with open(os.path.join(os.path.dirname(__file__), "questions.json"), "r") as fil
 
 def cpLogs(studentId,usernameCF,usernameLC,realName,day):
     leetcodeSubmission=get_leetcode_recent_submissions(usernameLC)
-    codeforcesSubmission=get_codeforces_recent_submissions(usernameCF)
+    # codeforcesSubmission=get_codeforces_recent_submissions(usernameCF)
     questionOfDay=questions[day]
     print(questionOfDay)
-    mark_db(studentId,questionOfDay,realName,leetcodeSubmission,codeforcesSubmission,day)
+    mark_db(studentId,questionOfDay,realName,leetcodeSubmission,day)

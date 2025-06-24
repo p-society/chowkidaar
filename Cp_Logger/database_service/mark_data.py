@@ -32,7 +32,7 @@ def check_cf(question_id, codeforces_submissions):
             return True
     return False
 
-def mark_db(studentId, questions, name, leetcode_submissions, codeforces_submissions, day):
+def mark_db(studentId, questions, name, leetcode_submissions,day):
     conn = connect_db()
     if not conn:
         return
@@ -43,10 +43,10 @@ def mark_db(studentId, questions, name, leetcode_submissions, codeforces_submiss
             question_id = q[3:]
             if check_lc(question_id, leetcode_submissions):
                 solved.append(idx)
-        elif q.startswith("CF"):
-            question_id = q[3:]
-            if check_cf(question_id, codeforces_submissions):
-                solved.append(idx)
+        # elif q.startswith("CF"):
+        #     question_id = q[3:]
+        #     if check_cf(question_id, codeforces_submissions):
+        #         solved.append(idx)
 
     with conn.cursor() as cur:
         # Make sure user exists
