@@ -98,7 +98,7 @@ def process_submissions(msg: str):
     
         # Get submissions using stored handles
         lc_submissions = get_leetcode_recent_submissions(lc_handle)
-        cf_submissions = get_codeforces_recent_submissions(cf_handle)
+        cf_submissions = {}
         
         # Validate submissions
         if isinstance(lc_submissions, dict) and 'error' in lc_submissions:
