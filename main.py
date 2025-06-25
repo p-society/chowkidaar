@@ -321,7 +321,7 @@ async def on_message_edit(old_message, new_message):
                 extra={"tags": {"event": "on_message_edit"}},
             )
 
-        if is_in_time_bracket(discord_user_id, timestamp) and update_log(
+        if is_in_time_bracket(submission_result["day"], timestamp) and update_log(
             discord_message_id, content, in_text_valid, updated_at
         ):
             logger.info(

@@ -9,19 +9,26 @@ from get_environment import LoadEnv
 
 
 def render_template(template_name, context):
-    env = Environment(loader=FileSystemLoader('./templates/mail'))
+    env = Environment(loader=FileSystemLoader("./templates/mail"))
     template = env.get_template(template_name)
     return template.render(context)
 
-def send_email(subject, body, to_email, from_email="saswat.pb03@gmail.com", password=LoadEnv().get('GMAIL_APP_PASSWORD')):
+
+def send_email(
+    subject,
+    body,
+    to_email,
+    from_email="saswat.pb03@gmail.com",
+    password=LoadEnv().get("GMAIL_APP_PASSWORD"),
+):
     try:
         msg = MIMEMultipart()
-        msg['From'] = from_email
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
+        msg["From"] = from_email
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "html"))
 
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(from_email, password)
         server.sendmail(from_email, to_email, msg.as_string())
@@ -30,7 +37,6 @@ def send_email(subject, body, to_email, from_email="saswat.pb03@gmail.com", pass
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}")
         sys.exit(1)
-
 
 
 # def send_streak_reminder(to_email):
@@ -71,5 +77,7 @@ def send_email(subject, body, to_email, from_email="saswat.pb03@gmail.com", pass
 #     time.sleep(1)
 
 if __name__ == "__main__":
-    test_body= render_template("streak_encouragement.html", context={"streak_count": 6})
+    test_body = render_template(
+        "streak_encouragement.html", context={"streak_count": 6}
+    )
     send_email("Test Subject", test_body, "b122103@iiit-bh.ac.in")

@@ -112,6 +112,7 @@ def is_registration_message(msg: str) -> bool:
     first_line = lines[0].strip().lower()
     if first_line != "register user":
         return False
+    return True
 
 
 # Test messages

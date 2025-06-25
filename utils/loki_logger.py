@@ -3,7 +3,7 @@ from logging_loki import LokiHandler
 
 
 HANDLER = LokiHandler(
-    url="http://127.0.0.1:3100/loki/api/v1/push", 
+    url="http://127.0.0.1:3100/loki/api/v1/push",
     tags={"application": "chowkidaar"},
     version="1",
 )
