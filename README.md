@@ -41,10 +41,11 @@ Coupon Aggregator offers two primary benefits to its users.
 
 ### Current contributors <a name="Current contributors"></a>
 
-<a href="https://github.com/gCBS/gCBS/graphs/contributors">
-  <img src="https://github.com/punitkr03.png" width="60px"/>
-  <img src="https://github.com/zakhaev26.png" width="60px"/>
+<a href="https://github.com/p-society/chowkidaar/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=p-society/chowkidaar" />
 </a>
+
+Made with [contributors-img](https://contributors-img.web.app).
 
 <!--
 ## Subscribe to updates
@@ -53,4 +54,4 @@ Join our [Discord Server](https://gCBS.com/joincommunity) and subscribe to this 
 -->
 # License <a name="License"></a>
 
-PSoc/Chowkidaar is licensed under [GPL-3.0 License](https://github.com/p-society/coupon-aggregator/blob/main/LICENSE)
+PSoc/Chowkidaar is licensed under [GPL-3.0 License](https://github.com/p-society/chowkidaar/blob/main/LICENSE)
