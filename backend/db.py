@@ -1,19 +1,27 @@
-import psycopg2
-from utils.parse_message import extract_user_info
-import pytz
 import datetime
-from prometheus_client import Counter
 import os
+from typing import List
+
 from dotenv import load_dotenv
+import pytz
+import psycopg2
+
+from prometheus_client import Counter
+from utils.parse_message import extract_user_info
 
 # Load env variables from .env file
 load_dotenv()
 DB_URL = os.getenv("NEON_DB_URL")
 
-total_db_operations = Counter('total_db_operations', 'Count of total database ops occured')
+total_db_operations = Counter(
+    "total_db_operations", "Count of total database ops occured"
+)
+
 
 def connect_to_database():
-    """Central database connection function that tries both connection methods"""
+    """
+    Returns a connection to the DB to be used throughout the app
+    """
     try:
         if DB_URL:
             try:
@@ -27,6 +35,7 @@ def connect_to_database():
         print(f"Error connecting to the database: {e}")
         return None
 
+
 def save_log(message, discord_user_id, discord_message_id, sent_at, in_text_valid=-1):
     try:
         conn = connect_to_database()
@@ -37,7 +46,7 @@ def save_log(message, discord_user_id, discord_message_id, sent_at, in_text_vali
                 message, discord_user_id, discord_message_id, sent_at, in_text_valid
             ) VALUES (%s, %s, %s, %s, %s)
             """,
-            (message, discord_user_id, discord_message_id, sent_at, in_text_valid)
+            (message, discord_user_id, discord_message_id, sent_at, in_text_valid),
         )
         conn.commit()
         total_db_operations.inc()
@@ -48,15 +57,19 @@ def save_log(message, discord_user_id, discord_message_id, sent_at, in_text_vali
         cur.close()
         conn.close()
 
+
 def update_log(discord_message_id, message, in_text_valid, updated_at):
     try:
         conn = connect_to_database()
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE participation_logs
             SET message = %s, in_text_valid = %s, updated_at = %s
             WHERE discord_message_id = '%s'
-        """, (message, in_text_valid, updated_at, discord_message_id))
+        """,
+            (message, in_text_valid, updated_at, discord_message_id),
+        )
         conn.commit()
         total_db_operations.inc()
         if cur.rowcount == 0:
@@ -71,6 +84,7 @@ def update_log(discord_message_id, message, in_text_valid, updated_at):
     finally:
         cur.close()
         conn.close()
+
 
 def delete_log(discord_message_id):
     try:
@@ -95,35 +109,42 @@ def delete_log(discord_message_id):
         cur.close()
         conn.close()
 
-# CP logs related functions
-def save_cp_log(student_id, name, solved_questions, day):
+
+def save_cp_log(student_id: str, name: str, solved_questions: List, day: int):
     """Save CP log to database"""
     conn = connect_to_database()
     if not conn:
-        return
-
+        return  # This should raise an exception here I guess?
 
     with conn.cursor() as cur:
         # Make sure user exists
-        cur.execute('SELECT * FROM "student_list_2024" WHERE "stu_id" = %s;', (student_id,))
+        cur.execute(
+            'SELECT * FROM "student_list_2024" WHERE "stu_id" = %s;', (student_id,)
+        )
         if cur.fetchone() is None:
             print("❌ User not found")
+            # Here an exception should be raised I guess?
 
         # Update solved questions
+        # Here we want to limit that if the day is already submitted, it doesn't add it again to the list.
         try:
             for i in range(len(solved_questions)):
                 field = f"q{i + 1}"
-                cur.execute(f'''
+                cur.execute(
+                    f"""
                     UPDATE student_list_2024
                     SET {field} = array_append({field}, '%s'),
                         all_solved = array_append(all_solved, %s)
                     WHERE stu_id = %s;
-                ''', (day, solved_questions[i], student_id))
+                """,
+                    (day, solved_questions[i], student_id),
+                )
         except Exception as e:
             print("Error: ", e)
 
         conn.commit()
         print("✅ Updated CP log successfully.")
+
 
 def delete_cp_log(student_id, day):
     """Delete CP log from database"""
@@ -136,74 +157,86 @@ def delete_cp_log(student_id, day):
         count_removed = 0
 
         for field in fields:
-            cur.execute(f"""
+            cur.execute(
+                f"""
                 SELECT "{field}" FROM "student_list_2024" WHERE "stu_id" = %s;
-            """, (student_id,))
+            """,
+                (student_id,),
+            )
             result = cur.fetchone()
 
             if result and day in result[0]:
-                cur.execute(f"""
+                cur.execute(
+                    f"""
                     UPDATE "student_list_2024"
                     SET "{field}" = array_remove("{field}", %s),
                         "total_solved" = "total_solved" - 1
                     WHERE "stu_id" = %s;
-                """, (day, student_id))
+                """,
+                    (day, student_id),
+                )
                 count_removed += 1
 
         conn.commit()
-        print(f"✅ Deleted '{day}' from {count_removed} field(s) for student '{student_id}'.")
+        print(
+            f"✅ Deleted '{day}' from {count_removed} field(s) for student '{student_id}'."
+        )
+
 
 # Utility functions
 def get_ist_time():
     utc_now = datetime.datetime.now()
-    ist = pytz.timezone('Asia/Kolkata')
+    ist = pytz.timezone("Asia/Kolkata")
     ist_now = utc_now.replace(tzinfo=pytz.utc).astimezone(ist)
     return ist_now
 
-def check_intext_validity(message):
-    '''
+
+def check_intext_validity(message) -> bool:
+    """
     Checks if the student id present in message is present in the Database. That's all
-    '''
+    """
     conn = connect_to_database()
     if not conn:
         print("Failed to connect to database for intext validity check")
         return -1
-        
+
     cur = conn.cursor()
-    try: 
+    try:
         college_id = extract_user_info(message)[0]
         print("Here is your college id", college_id)
         if college_id:
-            cur.execute("SELECT name FROM student_list_2024 WHERE stu_id=%s", (college_id,))
+            cur.execute(
+                "SELECT name FROM student_list_2024 WHERE stu_id=%s", (college_id,)
+            )
             full_name = cur.fetchone()
             print("Full name is  => ", full_name)
             total_db_operations.inc()
             if full_name:
                 first_name = full_name[0].split()[0]
                 if first_name.lower() in message.lower():
-                    return 1
+                    return True
                 elif full_name[0].lower() in message.lower():
-                    return 1
+                    return True
             else:
                 print(f"No name found for student_id: {college_id}")
-        return 0  
+        return False
     except Exception as e:
         print(f"Error while checking intext validity: {e}")
-        return -1
     finally:
-        cur.close() 
+        cur.close()
         conn.close()
+
 
 def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) -> bool:
     """
     Register a new user or update their handles.
-    
+
     Args:
         student_id (str): The student's ID
         name (str): The student's full name
         lc_handle (str): The student's LeetCode handle
         cf_handle (str): The student's CodeForces handle
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -211,31 +244,39 @@ def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) ->
         conn = connect_to_database()
         if not conn:
             return False
-            
+
         with conn.cursor() as cur:
             # Check if user exists
-            cur.execute('SELECT * FROM student_list_2024 WHERE stu_id = %s', (student_id,))
+            cur.execute(
+                "SELECT * FROM student_list_2024 WHERE stu_id = %s", (student_id,)
+            )
             user = cur.fetchone()
-            
+
             if user:
                 # Update existing user
-                cur.execute('''
+                cur.execute(
+                    """
                     UPDATE student_list_2024 
                     SET name = %s, lc_handle = %s, cf_handle = %s
                     WHERE stu_id = %s
-                ''', (name, lc_handle, cf_handle, student_id))
+                """,
+                    (name, lc_handle, cf_handle, student_id),
+                )
             else:
                 # Insert new user
-                cur.execute('''
+                cur.execute(
+                    """
                     INSERT INTO student_list_2024 
                     (stu_id, name, lc_handle, cf_handle, q1, q2, q3, all_solved)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (student_id, name, lc_handle, cf_handle, [], [], [], []))
-                
+                """,
+                    (student_id, name, lc_handle, cf_handle, [], [], [], []),
+                )
+
             conn.commit()
             total_db_operations.inc()
             return True
-            
+
     except Exception as e:
         print(f"Error registering user: {e}")
         if conn:
@@ -246,63 +287,69 @@ def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) ->
             conn.close()
 
 
-def check_time_bracket(day, timestamp):
+def check_time_bracket(day: int, timestamp: datetime.datetime) -> bool | None:
     try:
         conn = connect_to_database()
         if not conn:
             raise Exception
         with conn.cursor() as cur:
             # Check if the timestamp is present in timebracket for the day.
-            cur.execute('''
+            cur.execute(
+                """
                 SELECT *
                 FROM day_brackets 
                 WHERE day = '%s'
                 AND %s BETWEEN initial_time AND final_time;
-            ''', (day, timestamp)
+            """,
+                (day, timestamp),
             )
 
             result = cur.fetchone()
             cur.close()
             conn.close()
             if not result:
-               return False 
+                return False
             return True
-
 
     except Exception as e:
         print("Error in check_time_bracket", e)
 
 
 def flag_late(stu_id):
-    '''
+    """
     Just flagging a student late if he msgs late.
-    '''
+    """
     conn = connect_to_database()
     if not conn:
         raise Exception
     with conn.cursor() as cur:
-        cur.execute('''
+        cur.execute(
+            """
             UPDATE student_list_2024
             SET is_late=True
             WHERE stu_id=%s
-        ''', (stu_id,))
+        """,
+            (stu_id,),
+        )
     conn.commit()
-    return 
+    return
 
 
 def get_bracket_range_db(day):
-    '''
+    """
     Just returns INITIAL and FINAL time bracket values
-    '''
-    conn =connect_to_database()
+    """
+    conn = connect_to_database()
     if not conn:
         raise Exception
     with conn.cursor() as cur:
-        cur.execute('''
+        cur.execute(
+            """
             SELECT initial_time, final_time 
             FROM day_brackets
             WHERE day=%s
-        ''', (str(day),)
+        """,
+            (str(day),),
         )
         result = cur.fetchone()
         if result:

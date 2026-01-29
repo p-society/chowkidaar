@@ -1,13 +1,15 @@
 from loguru import logger
+
 # from errors.errors import EnvNotFound
 import sys
 
-def LoadEnv()-> dict:
-    config_file = open(".env","r")
+
+def LoadEnv() -> dict:
+    config_file = open(".env", "r")
     env_set = {}
     for line in config_file:
-        k,v = line.split('=')
-        env_set[k]=v
+        k, v = line.split("=")
+        env_set[k] = v
     config_file.close()
     try:
         return env_set
