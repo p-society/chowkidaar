@@ -9,16 +9,25 @@ from daily_resources.daily_questions import get_current_day
 # Load development resources from JSON
 def load_dev_resources():
     try:
-        with open("db/dev.json", "r") as file:
+        with open("configs/dev.json", "r") as file:
             return json.load(file)
     except Exception as e:
         logger.error(f"Error loading dev.json: {e}", extra={"tags": {"event": "load_dev_resources"}})
         return {}
 
+def load_event_config():
+    try:
+        with open("configs/event_config.json", "r") as file:
+            return json.load(file)
+    except Exception as e:
+        logger.error(f"Error loading event_config.json: {e}", extra={"tags": {"event": "load_event_config"}})
+        # Fallback config
+        return {"dev": {"announcement_intro": "**Day {day} Development Resources** 📚\n\nToday's learning materials:\n\n", "announcement_outro": "\nExpand your knowledge with these resources. Happy learning! 🧠"}}
+
 # Create development resources message
-def create_dev_resources_message(day_number, resources_list):
-    message = f"**Day {day_number} Development Resources** 📚\n\n"
-    message += "Today's learning materials:\n\n"
+def create_dev_resources_message(day_number, resources_list, config):
+    intro = config["dev"]["announcement_intro"].format(day=day_number)
+    message = intro
     
     for i, resource in enumerate(resources_list, 1):
         resource_type = resource["type"]
@@ -39,7 +48,8 @@ def create_dev_resources_message(day_number, resources_list):
         
         message += f"{i}. {emoji} [{title}]({link})\n"
     
-    message += "\nExpand your knowledge with these resources. Happy learning! 🧠"
+    outro = config["dev"]["announcement_outro"].format(day=day_number)
+    message += outro
     print(f"Created dev resources message for day {day_number}")
     return message
         
@@ -48,6 +58,7 @@ class DevResourcesScheduler:
         self.bot = bot
         self.channel_id = int(channel_id)
         self.resources = load_dev_resources()
+        self.config = load_event_config()
         self.start_date = start_date
         self.daily_resources_task.start()
     
@@ -88,7 +99,7 @@ class DevResourcesScheduler:
                     channel = self.bot.get_channel(self.channel_id)
                     if channel:
                         resources_list = self.resources[day_str]
-                        message = create_dev_resources_message(day, resources_list)
+                        message = create_dev_resources_message(day, resources_list, self.config)
                         sent_message = await channel.send(message, suppress_embeds=True)
                     try:
                         await self.unpin_previous_messages(channel)    

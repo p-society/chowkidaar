@@ -1,0 +1,12 @@
+{
+  "start_date": "2025-06-01",
+  "cp": {
+    "duration_days": 25,
+    "announcement_intro": "**Day {day} Coding Challenge** 🚀\n\nToday's questions:\n\n",
+    "announcement_outro": "\nRemember to submit your solutions in this channel by end of day! Good luck! 💪"
+  },
+  "dev": {
+    "announcement_intro": "**Day {day} Development Resources** 📚\n\nToday's learning materials:\n\n",
+    "announcement_outro": "\nExpand your knowledge with these resources. Happy learning! 🧠"
+  }
+}

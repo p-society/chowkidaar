@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: chowidaar_db
     env_file:
       - .env.local

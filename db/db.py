@@ -1,5 +1,4 @@
 import psycopg2
-from utils.parse_message import extract_user_info
 import pytz
 import datetime
 from prometheus_client import Counter
@@ -160,40 +159,6 @@ def get_ist_time():
     ist_now = utc_now.replace(tzinfo=pytz.utc).astimezone(ist)
     return ist_now
 
-def check_intext_validity(message):
-    '''
-    Checks if the student id present in message is present in the Database. That's all
-    '''
-    conn = connect_to_database()
-    if not conn:
-        print("Failed to connect to database for intext validity check")
-        return -1
-        
-    cur = conn.cursor()
-    try: 
-        college_id = extract_user_info(message)[0]
-        print("Here is your college id", college_id)
-        if college_id:
-            cur.execute("SELECT name FROM student_list_2024 WHERE stu_id=%s", (college_id,))
-            full_name = cur.fetchone()
-            print("Full name is  => ", full_name)
-            total_db_operations.inc()
-            if full_name:
-                first_name = full_name[0].split()[0]
-                if first_name.lower() in message.lower():
-                    return 1
-                elif full_name[0].lower() in message.lower():
-                    return 1
-            else:
-                print(f"No name found for student_id: {college_id}")
-        return 0  
-    except Exception as e:
-        print(f"Error while checking intext validity: {e}")
-        return -1
-    finally:
-        cur.close() 
-        conn.close()
-
 def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) -> bool:
     """
     Register a new user or update their handles.
@@ -311,4 +276,4 @@ def get_bracket_range_db(day):
 
 
 if __name__ == "__main__":
-    print(check_intext_validity(""))
+    pass
