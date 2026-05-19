@@ -26,6 +26,65 @@ def connect_to_database():
         print(f"Error connecting to the database: {e}")
         return None
 
+def get_student_profile(discord_user_id):
+    """Return (stu_id, name, total_solved) for the given Discord user, or None.
+
+    Convenience for /card and similar commands that need the full student
+    record by Discord ID in one query.
+    """
+    conn = None
+    try:
+        conn = connect_to_database()
+        if not conn:
+            return None
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT stu_id, name, COALESCE(total_solved, 0)
+                FROM student_list_2024
+                WHERE discord_user_id = %s
+                LIMIT 1
+                """,
+                (discord_user_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {"stu_id": row[0], "name": row[1], "total_solved": int(row[2] or 0)}
+    except psycopg2.Error as e:
+        print(f"get_student_profile error: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_registered_name(discord_user_id):
+    """Return the registered name for this Discord user, or None if not registered.
+
+    Looks up `student_list_2024.name` by `discord_user_id`. Used to display
+    cohort-side identity (e.g. "Aman Raj") rather than the Discord nickname.
+    """
+    conn = None
+    try:
+        conn = connect_to_database()
+        if not conn:
+            return None
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT name FROM student_list_2024 WHERE discord_user_id = %s LIMIT 1",
+                (discord_user_id,),
+            )
+            row = cur.fetchone()
+            return row[0] if row else None
+    except psycopg2.Error as e:
+        print(f"get_registered_name error: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
 def save_log(message, discord_user_id, discord_message_id, sent_at, in_text_valid=-1):
     try:
         conn = connect_to_database()
@@ -159,16 +218,25 @@ def get_ist_time():
     ist_now = utc_now.replace(tzinfo=pytz.utc).astimezone(ist)
     return ist_now
 
-def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) -> bool:
+def register_user(
+    student_id: str,
+    name: str,
+    lc_handle: str,
+    cf_handle: str,
+    discord_user_id: int | None = None,
+) -> bool:
     """
     Register a new user or update their handles.
-    
+
     Args:
         student_id (str): The student's ID
         name (str): The student's full name
         lc_handle (str): The student's LeetCode handle
         cf_handle (str): The student's CodeForces handle
-        
+        discord_user_id (int, optional): The Discord user ID of the person
+            running /register. When supplied, it's stored on the row so the
+            bot can later map stu_id <-> Discord user for badges and contests.
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -176,26 +244,30 @@ def register_user(student_id: str, name: str, lc_handle: str, cf_handle: str) ->
         conn = connect_to_database()
         if not conn:
             return False
-            
+
         with conn.cursor() as cur:
             # Check if user exists
             cur.execute('SELECT * FROM student_list_2024 WHERE stu_id = %s', (student_id,))
             user = cur.fetchone()
-            
+
             if user:
-                # Update existing user
+                # Update existing user. COALESCE keeps the stored discord_user_id
+                # if it's already set and the caller didn't pass a new one.
                 cur.execute('''
-                    UPDATE student_list_2024 
-                    SET name = %s, lc_handle = %s, cf_handle = %s
+                    UPDATE student_list_2024
+                    SET name = %s,
+                        lc_handle = %s,
+                        cf_handle = %s,
+                        discord_user_id = COALESCE(%s, discord_user_id)
                     WHERE stu_id = %s
-                ''', (name, lc_handle, cf_handle, student_id))
+                ''', (name, lc_handle, cf_handle, discord_user_id, student_id))
             else:
                 # Insert new user
                 cur.execute('''
-                    INSERT INTO student_list_2024 
-                    (stu_id, name, lc_handle, cf_handle, q1, q2, q3, all_solved)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (student_id, name, lc_handle, cf_handle, [], [], [], []))
+                    INSERT INTO student_list_2024
+                    (stu_id, name, lc_handle, cf_handle, q1, q2, q3, all_solved, discord_user_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (student_id, name, lc_handle, cf_handle, [], [], [], [], discord_user_id))
                 
             conn.commit()
             total_db_operations.inc()
