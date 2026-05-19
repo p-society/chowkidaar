@@ -155,33 +155,51 @@ def delete_log(discord_message_id):
 
 # CP logs related functions
 def save_cp_log(student_id, name, solved_questions, day):
-    """Save CP log to database"""
+    """Save CP log to database, cleaning up any existing log for this day first."""
     conn = connect_to_database()
     if not conn:
         return
 
+    try:
+        with conn.cursor() as cur:
+            # 1. Check if user exists
+            cur.execute('SELECT 1 FROM student_list_2024 WHERE stu_id = %s;', (student_id,))
+            if cur.fetchone() is None:
+                print("❌ User not found")
+                return
 
-    with conn.cursor() as cur:
-        # Make sure user exists
-        cur.execute('SELECT * FROM "student_list_2024" WHERE "stu_id" = %s;', (student_id,))
-        if cur.fetchone() is None:
-            print("❌ User not found")
+            # 2. Clean up any existing submission for this day from q1, q2, q3
+            # and decrement total_solved accordingly.
+            fields = ["q1", "q2", "q3"]
+            for field in fields:
+                cur.execute(f'SELECT "{field}" FROM student_list_2024 WHERE stu_id = %s;', (student_id,))
+                res = cur.fetchone()
+                if res and res[0] and str(day) in res[0]:
+                    cur.execute(f'''
+                        UPDATE student_list_2024
+                        SET "{field}" = array_remove("{field}", %s),
+                            total_solved = GREATEST(COALESCE(total_solved, 0) - 1, 0)
+                        WHERE stu_id = %s;
+                    ''', (str(day), student_id))
 
-        # Update solved questions
-        try:
+            # 3. Append the new solved questions and increment total_solved
             for i in range(len(solved_questions)):
                 field = f"q{i + 1}"
                 cur.execute(f'''
                     UPDATE student_list_2024
-                    SET {field} = array_append({field}, '%s'),
-                        all_solved = array_append(all_solved, %s)
+                    SET {field} = array_append({field}, %s),
+                        all_solved = array_append(all_solved, %s),
+                        total_solved = COALESCE(total_solved, 0) + 1
                     WHERE stu_id = %s;
-                ''', (day, solved_questions[i], student_id))
-        except Exception as e:
-            print("Error: ", e)
+                ''', (str(day), solved_questions[i], student_id))
 
-        conn.commit()
-        print("✅ Updated CP log successfully.")
+            conn.commit()
+            print("✅ Updated CP log successfully.")
+    except Exception as e:
+        print(f"Error in save_cp_log: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 def delete_cp_log(student_id, day):
     """Delete CP log from database"""

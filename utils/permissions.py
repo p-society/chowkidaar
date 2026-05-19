@@ -56,3 +56,13 @@ def is_admin(interaction: discord.Interaction) -> bool:
     if interaction.guild and interaction.user.guild_permissions.administrator:
         return True
     return False
+
+
+def is_watched_channel():
+    from config import WATCHED_CHANNEL_ID
+    import discord
+    from discord import app_commands
+    def predicate(interaction: discord.Interaction) -> bool:
+        return interaction.channel_id == WATCHED_CHANNEL_ID
+    return app_commands.check(predicate)
+

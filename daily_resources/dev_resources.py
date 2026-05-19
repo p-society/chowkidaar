@@ -1,6 +1,7 @@
 import json
 import datetime
 import pytz
+import discord
 from discord.ext import tasks
 import logging as logger
 
@@ -24,11 +25,11 @@ def load_event_config():
         # Fallback config
         return {"dev": {"announcement_intro": "**Day {day} Development Resources** 📚\n\nToday's learning materials:\n\n", "announcement_outro": "\nExpand your knowledge with these resources. Happy learning! 🧠"}}
 
-# Create development resources message
-def create_dev_resources_message(day_number, resources_list, config):
+# Create development resources embed
+def create_dev_resources_embed(day_number, resources_list, config):
     intro = config["dev"]["announcement_intro"].format(day=day_number)
-    message = intro
     
+    res_text = ""
     for i, resource in enumerate(resources_list, 1):
         resource_type = resource["type"]
         title = resource["title"]
@@ -46,12 +47,21 @@ def create_dev_resources_message(day_number, resources_list, config):
         else:
             emoji = "🔗"
         
-        message += f"{i}. {emoji} [{title}]({link})\n"
+        res_text += f"{i}. {emoji} [{title}]({link})\n"
     
     outro = config["dev"]["announcement_outro"].format(day=day_number)
-    message += outro
-    print(f"Created dev resources message for day {day_number}")
-    return message
+    
+    embed = discord.Embed(
+        title=f"📚 Learning Materials: Day {day_number}",
+        description=f"{intro}\n{res_text}\n{outro}",
+        color=discord.Color.blue()
+    )
+    
+    branding = config.get("branding") or {}
+    footer_text = branding.get("subtitle", "25 Days of Productivity")
+    embed.set_footer(text=footer_text)
+    
+    return embed
         
 class DevResourcesScheduler:
     def __init__(self, bot, channel_id, start_date):
@@ -66,15 +76,19 @@ class DevResourcesScheduler:
         try:
             # Get pinned messages
             pinned_messages = await channel.pins()
-            # Look for messages from our bot that match our format
             bot_id = self.bot.user.id
+            curr_day = get_current_day(self.start_date)
             for pinned in pinned_messages:
-                # Check if message is from our bot and from a previous day
-                if (pinned.author.id == bot_id and 
-                    ("Day " in pinned.content) and 
-                    not f"Day {get_current_day(self.start_date)}" in pinned.content):
+                if pinned.author.id != bot_id:
+                    continue
+                
+                content = pinned.content or ""
+                if pinned.embeds:
+                    content += " " + (pinned.embeds[0].title or "") + " " + (pinned.embeds[0].description or "")
+                
+                if "Day " in content and not f"Day {curr_day}" in content:
                     await pinned.unpin()
-                    logger.info(f"Unpinned old message: {pinned.content[:30]}...", 
+                    logger.info(f"Unpinned old message: {pinned.id}", 
                               extra={"tags": {"event": "message_unpin"}})
         except Exception as e:
             logger.error(f"Error unpinning previous messages: {e}", 
@@ -99,8 +113,8 @@ class DevResourcesScheduler:
                     channel = self.bot.get_channel(self.channel_id)
                     if channel:
                         resources_list = self.resources[day_str]
-                        message = create_dev_resources_message(day, resources_list, self.config)
-                        sent_message = await channel.send(message, suppress_embeds=True)
+                        embed = create_dev_resources_embed(day, resources_list, self.config)
+                        sent_message = await channel.send(embed=embed)
                     try:
                         await self.unpin_previous_messages(channel)    
                         await sent_message.pin()

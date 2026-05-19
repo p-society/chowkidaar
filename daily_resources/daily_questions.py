@@ -43,20 +43,29 @@ def format_question_links(day_number, questions_list):
     
     return formatted_links
 
-# Create daily question message
-def create_daily_question_message(day_number, questions_list, config):
+# Create daily question embed
+def create_daily_question_embed(day_number, questions_list, config):
     links = format_question_links(day_number, questions_list)
     
     intro = config["cp"]["announcement_intro"].format(day=day_number)
-    message = intro
     
+    q_text = ""
     for i, link in enumerate(links, 1):
-        message += f"{i}. {link}\n"
+        q_text += f"{i}. {link}\n"
     
     outro = config["cp"]["announcement_outro"].format(day=day_number)
-    message += outro
-    print(f"Created message for day {day_number}: {message}")
-    return message
+    
+    embed = discord.Embed(
+        title=f"🚀 Coding Challenge: Day {day_number}",
+        description=f"{intro}\n{q_text}\n{outro}",
+        color=discord.Color.teal()
+    )
+    
+    branding = config.get("branding") or {}
+    footer_text = branding.get("subtitle", "25 Days of Productivity")
+    embed.set_footer(text=footer_text)
+    
+    return embed
 
 # Calculate days since start date
 def get_current_day(start_date):
@@ -97,8 +106,8 @@ class DailyQuestionScheduler:
                     channel = self.bot.get_channel(self.channel_id)
                     if channel:
                         questions_list = self.questions[day_str]
-                        message = create_daily_question_message(day, questions_list, self.config)
-                        cp_message = await channel.send(message)
+                        embed = create_daily_question_embed(day, questions_list, self.config)
+                        cp_message = await channel.send(embed=embed)
                     try:
                         await cp_message.pin()
                         logger.info(f"Sent day {day} dev questions to channel", 

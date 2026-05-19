@@ -35,13 +35,10 @@ from db.db import connect_to_database, total_db_operations
 from utils.event_window import get_event_window
 
 
-# Milestone thresholds. Add more keys here (and rows in the `badges` table)
-# if you ever want more milestones.
-MILESTONE_THRESHOLDS = [
-    (7, "day7_done"),
-    (14, "day14_done"),
-    (25, "day25_done"),
-]
+from db.badges_config import get_milestone_thresholds
+
+# Milestone thresholds dynamically loaded from centralized badges configuration
+MILESTONE_THRESHOLDS = get_milestone_thresholds()
 
 
 def _fetch_badge_meta(cur, badge_key: str) -> Optional[dict]:
@@ -67,7 +64,7 @@ def list_user_badges(discord_user_id: int) -> List[dict]:
             cur.execute(
                 """
                 SELECT b.key, b.name, b.description, b.category,
-                       b.discord_role_id, ub.awarded_at
+                       b.discord_role_id, b.emoji, ub.awarded_at
                 FROM user_badges ub
                 JOIN badges b ON b.key = ub.badge_key
                 WHERE ub.discord_user_id = %s
@@ -198,20 +195,8 @@ def get_top_badge_emoji(discord_user_id: int) -> Optional[str]:
         return None
     finally:
         conn.close()
-
-
 def format_name_with_badge(discord_user_id: int, name: str) -> str:
-    """
-    Return `"{emoji} {name}"` where emoji is the user's top-priority badge
-    emoji, or just `name` if they have no badges (or none with emojis).
-
-    Used wherever the bot prints a user's name in chat/embeds — submissions,
-    badges command, sync announcements, etc.
-    """
-    emoji = get_top_badge_emoji(discord_user_id)
-    if not emoji:
-        return name
-    return f"{emoji} {name}"
+    return name
 
 
 def get_all_badge_emojis() -> List[str]:

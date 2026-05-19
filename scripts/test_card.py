@@ -23,20 +23,42 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.card_generator import CardData, render_card
 
+# Try to find a local image to use as a test avatar for dynamic theming
+avatar_bytes = None
+test_avatar_paths = [
+    "/home/spandan/.gemini/antigravity/brain/427d13ac-61b2-42ca-a4d9-e231d2bda3d6/coding_dark_bg_1779188586272.png",
+    "assets/images/fire.png",
+    "assets/logos/techsoc.jpg",
+]
+for p in test_avatar_paths:
+    if os.path.exists(p):
+        try:
+            with open(p, "rb") as f:
+                avatar_bytes = f.read()
+            print(f"Loaded test avatar for dynamic theming from {p}")
+            break
+        except Exception:
+            pass
 
 SAMPLES = [
     ("card_early",     CardData(name="Aman Raj", student_id="B124011", day_progress=3,
-                                streak=2, total_solved=7, badge_emojis=[])),
+                                streak=2, total_solved=7, badge_emojis=[], avatar_webp_bytes=avatar_bytes)),
     ("card_mid",       CardData(name="Aman Raj", student_id="B124011", day_progress=12,
                                 streak=5, total_solved=29, badge_emojis=["🥉", "🎯"],
+                                badge_keys=["day7_done"],
+                                avatar_webp_bytes=avatar_bytes,
                                 custom_line="Halfway there — let's go.")),
     ("card_late",      CardData(name="Spandan Mishra", student_id="B124002", day_progress=20,
-                                streak=9, total_solved=51, badge_emojis=["🥉", "🥈", "🎯"])),
+                                streak=9, total_solved=51, badge_emojis=["🥉", "🥈", "🎯"],
+                                badge_keys=["day7_done", "day14_done"],
+                                avatar_webp_bytes=avatar_bytes)),
     ("card_done",      CardData(name="Spandan Mishra", student_id="B124002", day_progress=25,
                                 streak=25, total_solved=73,
-                                badge_emojis=["🥉", "🥈", "🥇", "🎯", "🌟", "📈"])),
+                                badge_emojis=["🥉", "🥈", "🥇", "🎯", "🌟", "📈"],
+                                badge_keys=["day7_done", "day14_done", "day25_done"],
+                                avatar_webp_bytes=avatar_bytes)),
     ("card_no_badges", CardData(name="New Joiner",   student_id="B124099", day_progress=1,
-                                streak=1, total_solved=2, badge_emojis=[])),
+                                streak=1, total_solved=2, badge_emojis=[], avatar_webp_bytes=avatar_bytes)),
 ]
 
 
