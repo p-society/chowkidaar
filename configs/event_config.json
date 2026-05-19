@@ -1,5 +1,12 @@
 {
   "start_date": "2025-06-01",
+  "bot_admins": [
+    1336348458671673354
+  ],
+  "branding": {
+    "title": "25 Days of Productivity",
+    "subtitle": "by The Programming Society · IIIT-BH"
+  },
   "cp": {
     "duration_days": 25,
     "announcement_intro": "**Day {day} Coding Challenge** 🚀\n\nToday's questions:\n\n",

@@ -1,0 +1,396 @@
+"""
+Level-up card renderer.
+
+Produces a 1080×1920 PNG (Instagram Story dimensions) summarizing a user's
+progress in the 25-day event. Dark + accent style:
+
+  - Background:  deep navy   #0F172A
+  - Accent:      teal         #14B8A6
+  - Text:        off-white    #F8FAFC
+  - Muted:       slate gray   #64748B
+
+Layout zones (top to bottom):
+  0–500      Hero band       — avatar + name + student_id
+  500–950    Big number      — "DAY 14 / 25"
+  950–1250   Stats row       — streak | total solved
+  1250–1550  Badges row      — emoji icons
+  1550–1920  Footer          — personalized one-liner + brand line
+
+Public API:
+    render_card(data: CardData) -> bytes
+    CardData dataclass holds everything the renderer needs.
+
+Font loading is forgiving — if Inter isn't bundled, we fall back to Helvetica,
+Arial, DejaVu Sans, and finally PIL's default.
+"""
+
+from __future__ import annotations
+
+import io
+import os
+import random
+from dataclasses import dataclass, field
+from typing import List, Optional, Sequence
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+# Pulled lazily inside render_card so importing this module never touches disk.
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Style constants
+# ──────────────────────────────────────────────────────────────────────────
+
+WIDTH, HEIGHT = 1080, 1920
+
+BG_NAVY      = (15, 23, 42)         # #0F172A
+CARD_NAVY    = (30, 41, 59)         # #1E293B  (slightly lighter for stat cards)
+ACCENT_TEAL  = (20, 184, 166)       # #14B8A6
+TEXT_WHITE   = (248, 250, 252)      # #F8FAFC
+MUTED_GRAY   = (148, 163, 184)      # #94A3B8
+
+# Font candidates in priority order. First file found is used.
+FONTS_REGULAR = [
+    "assets/fonts/Inter-Regular.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "DejaVuSans.ttf",
+]
+FONTS_BOLD = [
+    "assets/fonts/Inter-Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "DejaVuSans-Bold.ttf",
+]
+
+# Color-emoji fonts. PIL's truetype() only accepts the font's *native* bitmap
+# size for these (137 for Apple Color Emoji, 128 for Noto Color Emoji); we
+# render at that size and resize the resulting image. (path, native_size)
+EMOJI_FONTS = [
+    ("/System/Library/Fonts/Apple Color Emoji.ttc",              137),
+    ("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",        128),
+    ("/usr/share/fonts/noto-cjk/NotoColorEmoji.ttf",             128),
+    ("assets/fonts/NotoColorEmoji.ttf",                          128),
+]
+
+# Personalized one-liners tuned to progress tier.
+TIER_LINES = {
+    "early":   [
+        "Just getting started — keep showing up.",
+        "Every legend starts at Day 1.",
+        "Momentum is everything. Go again tomorrow.",
+    ],
+    "mid":     [
+        "Halfway there — you're built different.",
+        "You've put in the reps. Don't stop now.",
+        "The streak is the prize.",
+    ],
+    "late":    [
+        "Final stretch. Finish strong.",
+        "You can already see the finish line.",
+        "Almost there — don't ease up.",
+    ],
+    "done":    [
+        "25 days down. Hall of Fame energy.",
+        "You actually did it. Take the bow.",
+        "Completed the challenge — that's the flex.",
+    ],
+}
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Data
+# ──────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class CardData:
+    name: str
+    student_id: str
+    day_progress: int                 # 0..25 (distinct days submitted)
+    duration_days: int = 25
+    streak: int = 0
+    total_solved: int = 0
+    badge_emojis: List[str] = field(default_factory=list)
+    avatar_png_bytes: Optional[bytes] = None    # raw PNG, optional
+    custom_line: Optional[str] = None           # if None, picked from TIER_LINES
+
+    def tier(self) -> str:
+        d = self.day_progress
+        if d >= self.duration_days: return "done"
+        if d >= int(self.duration_days * 0.7): return "late"
+        if d >= int(self.duration_days * 0.3): return "mid"
+        return "early"
+
+    def line(self) -> str:
+        if self.custom_line:
+            return self.custom_line
+        choices = TIER_LINES.get(self.tier(), TIER_LINES["early"])
+        return random.choice(choices)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Font helper
+# ──────────────────────────────────────────────────────────────────────────
+
+def _load_font(candidates: Sequence[str], size: int) -> ImageFont.FreeTypeFont:
+    for path in candidates:
+        try:
+            return ImageFont.truetype(path, size)
+        except (OSError, IOError):
+            continue
+    # Last resort — PIL's bitmap default. Doesn't honor `size`, but at least renders.
+    return ImageFont.load_default()
+
+
+def _font_regular(size: int) -> ImageFont.FreeTypeFont:
+    return _load_font(FONTS_REGULAR, size)
+
+
+def _font_bold(size: int) -> ImageFont.FreeTypeFont:
+    return _load_font(FONTS_BOLD, size)
+
+
+def _render_emoji(char: str, target_size: int) -> Image.Image:
+    """
+    Render one emoji as an RGBA image of (target_size, target_size).
+
+    Color-emoji fonts only render at their native bitmap size, so we draw to
+    a native-sized canvas and then resize. If no emoji font is available
+    (sandbox, minimal Linux container), we fall back to the regular bold font
+    — the glyph will show as a placeholder box but the layout still works.
+    """
+    for path, native in EMOJI_FONTS:
+        if not os.path.exists(path):
+            continue
+        try:
+            font = ImageFont.truetype(path, native)
+            img = Image.new("RGBA", (native, native), (0, 0, 0, 0))
+            d = ImageDraw.Draw(img)
+            # Center within the native-size canvas
+            bbox = d.textbbox((0, 0), char, font=font, embedded_color=True)
+            tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            x = (native - tw) // 2 - bbox[0]
+            y = (native - th) // 2 - bbox[1]
+            d.text((x, y), char, font=font, embedded_color=True)
+            return img.resize((target_size, target_size), Image.LANCZOS)
+        except (OSError, IOError, ValueError):
+            continue
+
+    # Fallback: render the char with the regular text font onto a blank canvas.
+    img = Image.new("RGBA", (target_size, target_size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    font = _font_bold(int(target_size * 0.85))
+    bbox = d.textbbox((0, 0), char, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    d.text(((target_size - tw) // 2 - bbox[0], (target_size - th) // 2 - bbox[1]),
+           char, font=font, fill=TEXT_WHITE)
+    return img
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Drawing primitives
+# ──────────────────────────────────────────────────────────────────────────
+
+def _text_width(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont) -> int:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[2] - bbox[0]
+
+
+def _text_height(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont) -> int:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[3] - bbox[1]
+
+
+def _center_text(draw: ImageDraw.ImageDraw, y: int, text: str, font: ImageFont.FreeTypeFont, fill):
+    w = _text_width(draw, text, font)
+    draw.text(((WIDTH - w) // 2, y), text, font=font, fill=fill)
+
+
+def _circular_avatar(raw_png: bytes, size: int) -> Image.Image:
+    """Decode bytes, resize to (size, size), apply circular alpha mask."""
+    avatar = Image.open(io.BytesIO(raw_png)).convert("RGBA").resize((size, size), Image.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, size, size), fill=255)
+    out = Image.new("RGBA", (size, size))
+    out.paste(avatar, (0, 0), mask)
+    return out
+
+
+def _placeholder_avatar(size: int, initial: str) -> Image.Image:
+    """When no avatar is provided, draw a teal circle with the user's initial."""
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse((0, 0, size, size), fill=ACCENT_TEAL)
+    font = _font_bold(int(size * 0.5))
+    w = _text_width(d, initial, font)
+    h = _text_height(d, initial, font)
+    d.text(((size - w) // 2, (size - h) // 2 - int(size * 0.05)), initial, font=font, fill=TEXT_WHITE)
+    return img
+
+
+def _draw_rounded_card(draw: ImageDraw.ImageDraw, box, radius: int, fill):
+    """Filled rounded rectangle — PIL has rectangle_rounded but spelled differently per version."""
+    draw.rounded_rectangle(box, radius=radius, fill=fill)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Public renderer
+# ──────────────────────────────────────────────────────────────────────────
+
+def render_card(data: CardData) -> bytes:
+    # Read branding lazily so swapping configs doesn't require restarting tests.
+    from utils.event_window import get_event_branding
+    branding = get_event_branding()
+
+    img = Image.new("RGB", (WIDTH, HEIGHT), BG_NAVY)
+    draw = ImageDraw.Draw(img)
+
+    # ── Subtle accent glow at the top (soft circle that blurs into the bg) ──
+    glow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
+    glow_draw.ellipse((-200, -600, WIDTH + 200, 600), fill=(*ACCENT_TEAL, 70))
+    glow = glow.filter(ImageFilter.GaussianBlur(120))
+    img.paste(Image.alpha_composite(img.convert("RGBA"), glow).convert("RGB"))
+    draw = ImageDraw.Draw(img)
+
+    # ── Poster heading (y ≈ 60–180) ──
+    # Letter-spaced uppercase title in accent, smaller subtitle below in muted.
+    title_font = _font_bold(52)
+    subtitle_font = _font_regular(30)
+    title = branding["title"].upper()
+    # Manual letter spacing for the title — draw each char individually so the
+    # uppercase reads as a "poster" header without a custom font.
+    title_chars = list(title)
+    char_gap = 6
+    char_widths = [_text_width(draw, c, title_font) for c in title_chars]
+    total_title_w = sum(char_widths) + char_gap * (len(title_chars) - 1)
+    x = (WIDTH - total_title_w) // 2
+    for c, cw in zip(title_chars, char_widths):
+        draw.text((x, 60), c, font=title_font, fill=ACCENT_TEAL)
+        x += cw + char_gap
+    _center_text(draw, 130, branding["subtitle"], subtitle_font, MUTED_GRAY)
+
+    # Thin accent divider under the heading
+    draw.line([(WIDTH // 2 - 80, 188), (WIDTH // 2 + 80, 188)], fill=ACCENT_TEAL, width=3)
+
+    # ── Hero band: avatar + name + student_id (y ≈ 220–620) ──
+    AV_SIZE = 300
+    avatar = (
+        _circular_avatar(data.avatar_png_bytes, AV_SIZE)
+        if data.avatar_png_bytes
+        else _placeholder_avatar(AV_SIZE, (data.name or "?")[:1].upper())
+    )
+    img.paste(avatar, ((WIDTH - AV_SIZE) // 2, 220), avatar)
+
+    name_font = _font_bold(70)
+    _center_text(draw, 545, data.name, name_font, TEXT_WHITE)
+
+    sid_font = _font_regular(34)
+    _center_text(draw, 630, data.student_id, sid_font, ACCENT_TEAL)
+
+    # ── Big number: DAY X / 25 (y ≈ 720–1010) ──
+    big_font = _font_bold(260)
+    small_font = _font_bold(110)
+
+    big_str = f"{data.day_progress}"
+    small_str = f" / {data.duration_days}"
+
+    big_w = _text_width(draw, big_str, big_font)
+    small_w = _text_width(draw, small_str, small_font)
+    total_w = big_w + small_w
+    big_x = (WIDTH - total_w) // 2
+    big_y = 720
+    draw.text((big_x, big_y), big_str, font=big_font, fill=ACCENT_TEAL)
+    draw.text((big_x + big_w, big_y + (260 - 110) - 10), small_str, font=small_font, fill=MUTED_GRAY)
+
+    label_font = _font_regular(44)
+    _center_text(draw, big_y + 260 + 30, "DAYS COMPLETED", label_font, MUTED_GRAY)
+
+    # ── Stats row (y ≈ 1100–1320): streak | total solved ──
+    CARD_W = 460
+    CARD_H = 220
+    CARD_GAP = 40
+    cards_total_w = CARD_W * 2 + CARD_GAP
+    cards_x0 = (WIDTH - cards_total_w) // 2
+    cards_y0 = 1100
+
+    def _stat_card(x: int, label: str, emoji_char: str, number: int, value_color):
+        _draw_rounded_card(
+            draw, (x, cards_y0, x + CARD_W, cards_y0 + CARD_H), radius=36, fill=CARD_NAVY
+        )
+        val_font = _font_bold(110)
+        lbl_font = _font_regular(32)
+        EMOJI_SIZE = 90
+        GAP = 18
+
+        number_str = str(number)
+        number_w = _text_width(draw, number_str, val_font)
+        content_w = EMOJI_SIZE + GAP + number_w
+
+        # Vertically center the emoji and number against the same baseline.
+        content_x = x + (CARD_W - content_w) // 2
+        emoji_y = cards_y0 + 40
+        num_y = cards_y0 + 30
+
+        emoji_img = _render_emoji(emoji_char, EMOJI_SIZE)
+        img.paste(emoji_img, (content_x, emoji_y), emoji_img)
+        draw.text(
+            (content_x + EMOJI_SIZE + GAP, num_y),
+            number_str, font=val_font, fill=value_color,
+        )
+
+        lw = _text_width(draw, label, lbl_font)
+        draw.text(
+            (x + (CARD_W - lw) // 2, cards_y0 + 160),
+            label, font=lbl_font, fill=MUTED_GRAY,
+        )
+
+    _stat_card(cards_x0, "DAY STREAK", "🔥", data.streak, TEXT_WHITE)
+    _stat_card(cards_x0 + CARD_W + CARD_GAP, "PROBLEMS SOLVED", "✅", data.total_solved, TEXT_WHITE)
+
+    # ── Badges row (y ≈ 1400–1600) ──
+    badge_y = 1400
+    if data.badge_emojis:
+        EMOJI_SIZE = 130
+        spacing = 40
+        total_w = EMOJI_SIZE * len(data.badge_emojis) + spacing * (len(data.badge_emojis) - 1)
+        x = (WIDTH - total_w) // 2
+        for emoji in data.badge_emojis:
+            e_img = _render_emoji(emoji, EMOJI_SIZE)
+            img.paste(e_img, (x, badge_y), e_img)
+            x += EMOJI_SIZE + spacing
+
+        badge_label_font = _font_regular(34)
+        _center_text(draw, badge_y + EMOJI_SIZE + 30, "BADGES EARNED", badge_label_font, MUTED_GRAY)
+    else:
+        no_badges_font = _font_regular(38)
+        _center_text(draw, badge_y + 50, "No badges yet — keep going!", no_badges_font, MUTED_GRAY)
+
+    # ── Footer: personalized one-liner (y ≈ 1700–1850). The poster header
+    #    already carries the event + org, so no second brand line is needed.
+    line_font = _font_regular(44)
+    line = data.line()
+    # Wrap manually at ~32 chars per line.
+    words, current_lines, current = line.split(), [], ""
+    for w in words:
+        if len(current) + len(w) + 1 > 32:
+            current_lines.append(current.strip())
+            current = w + " "
+        else:
+            current += w + " "
+    if current.strip():
+        current_lines.append(current.strip())
+
+    # Vertically center the 1-3 line block around y=1770.
+    total_h = len(current_lines[:3]) * 58
+    ly = 1770 - total_h // 2
+    for ln in current_lines[:3]:
+        _center_text(draw, ly, ln, line_font, TEXT_WHITE)
+        ly += 58
+
+    # ── Encode to PNG bytes ──
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
