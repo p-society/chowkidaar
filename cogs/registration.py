@@ -77,7 +77,7 @@ class RegistrationCog(commands.Cog):
 
         if not badge_rows:
             embed.add_field(
-                name="🏆 Badges\n",
+                name="🏆 Badges",
                 value="No badges yet. Keep submitting!",
                 inline=False,
             )
