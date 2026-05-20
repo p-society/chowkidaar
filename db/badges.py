@@ -280,14 +280,70 @@ def current_streak(discord_user_id: int) -> int:
     return streak
 
 
+def max_streak(discord_user_id: int) -> int:
+    """
+    Longest consecutive-day run of valid submissions for this user inside the
+    event window (UTC days). "Consecutive" means each day immediately follows
+    the previous one — a one-day gap breaks the streak.
+
+    Unlike current_streak (which only looks at the run anchored to today),
+    this returns the user's best run *anywhere* in the event. Used to award
+    streak-based milestone badges that, once earned, are kept forever even
+    if the user later breaks their streak.
+    """
+    conn = connect_to_database()
+    if not conn:
+        return 0
+    try:
+        with conn.cursor() as cur:
+            start_utc, end_utc = get_event_window()
+            cur.execute(
+                """
+                SELECT DISTINCT DATE(sent_at AT TIME ZONE 'UTC') AS d
+                FROM participation_logs
+                WHERE discord_user_id = %s
+                  AND deleted_at IS NULL
+                  AND in_text_valid = 1
+                  AND sent_at >= %s
+                  AND sent_at <  %s
+                ORDER BY d ASC
+                """,
+                (discord_user_id, start_utc, end_utc),
+            )
+            dates = [row[0] for row in cur.fetchall()]
+    except psycopg2.Error as e:
+        print(f"max_streak error: {e}")
+        return 0
+    finally:
+        conn.close()
+
+    if not dates:
+        return 0
+
+    from datetime import timedelta
+    best = 1
+    run = 1
+    for i in range(1, len(dates)):
+        if dates[i] == dates[i - 1] + timedelta(days=1):
+            run += 1
+            if run > best:
+                best = run
+        else:
+            run = 1
+    return best
+
+
 def check_and_award_milestones(discord_user_id: int) -> List[dict]:
     """
     Award any milestone badges the user has just earned. Returns metadata for
     each newly awarded badge (so the caller can announce them in Discord).
     Already-held badges are silently skipped.
+
+    Awarding is **streak-based**: a 7-day consecutive run earns `day7_done`,
+    14-day earns `day14_done`, 25-day earns `day25_done`. Uses max_streak so
+    that once earned, a badge sticks even if the user later breaks their run.
     """
-    start_utc, end_utc = get_event_window()
-    days = count_distinct_submission_days(discord_user_id, start_utc, end_utc)
+    days = max_streak(discord_user_id)
 
     newly_awarded: List[dict] = []
     for threshold, badge_key in MILESTONE_THRESHOLDS:
