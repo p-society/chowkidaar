@@ -20,6 +20,7 @@ class ChowkidaarBot(commands.Bot):
         await self.load_extension("cogs.submissions")
         await self.load_extension("cogs.badges")
         await self.load_extension("cogs.help")
+        await self.load_extension("cogs.contests")
 
         # Auto-synchronize badges config to the database
         try:

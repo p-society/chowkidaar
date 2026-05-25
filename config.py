@@ -22,6 +22,9 @@ load_environment(environment)
 
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 WATCHED_CHANNEL_ID = int(os.getenv('WATCHED_CHANNEL_ID'))
+CONTEST_ROLE_ID = int(os.getenv('CONTEST_ROLE_ID', '0'))
+CLIST_USERNAME = os.getenv('CLIST_USERNAME')
+CLIST_API_KEY = os.getenv('CLIST_API_KEY')
 
 # Postgres connection settings. The .env files use POSTGRES_* names
 # (matching docker-compose conventions); expose them under both

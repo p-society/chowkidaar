@@ -44,6 +44,7 @@ chowkidaar/
 ├── cogs/ (Interactive Slash Commands)
 │   ├── registration.py (/register, /profile commands)
 │   ├── submissions.py (/submit, /status daily logger)
+│   ├── contests.py (/upcoming command & auto-reminders)
 │   ├── badges.py (/sync_badges admin helper)
 │   └── help.py (Interactive Help Cog)
 ├── db/ (Database Management)
@@ -60,6 +61,7 @@ chowkidaar/
 All interactive slash commands are cleanly separated into extensions located in `cogs/`:
 *   **`cogs/registration.py`**: Handles student registration (`/register`) and profile cards rendering (`/profile`). Downloads and buffers user avatar images on the fly.
 *   **`cogs/submissions.py`**: Manages CP log submissions (`/submit`, `/edit_submission`, `/delete_submission`, `/status`). Automatically tracks user milestone thresholds and handles announcement logs.
+*   **`cogs/contests.py`**: Fetches upcoming CP contests from Codeforces, LeetCode, and CodeChef using the Clist.by API. Automatically sends 12-hour, 15-minute, and 0-minute alerts to the progress channel and provides the `/upcoming` slash command.
 *   **`cogs/badges.py`**: Provides administration tools for syncing milestone statuses and user roles (`/sync_badges`).
 *   **`cogs/help.py`**: A clean, stylized interactive help menu showing available options.
 
@@ -104,7 +106,7 @@ Create your configuration file by copying the template:
 ```bash
 cp .env.example .env.local
 ```
-Add your respective `DISCORD_TOKEN`, `NEON_DB_URL` (database string), `DEV_GUILD_ID` (for instant guild slash command syncing), and `WATCHED_CHANNEL_ID` to `.env.local`.
+Add your respective `DISCORD_TOKEN`, `NEON_DB_URL` (database string), `DEV_GUILD_ID` (for instant guild slash command syncing), `WATCHED_CHANNEL_ID`, `CONTEST_ROLE_ID`, `CLIST_USERNAME`, and `CLIST_API_KEY` to `.env.local`.
 
 ### 4. Boot Up Local Database (Docker Compose)
 Start a local PostgreSQL instance:
