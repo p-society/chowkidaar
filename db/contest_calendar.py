@@ -63,6 +63,8 @@ def _refresh_if_stale() -> None:
     with _lock:
         if _cache_loaded_at is not None and (now - _cache_loaded_at) < _CACHE_TTL:
             return
+        # Temporarily advance the load timestamp to prevent concurrent stampede
+        _cache_loaded_at = now
 
     try:
         cf = fetch_codeforces_schedule()
