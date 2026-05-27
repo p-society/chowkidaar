@@ -116,7 +116,7 @@ def update_log(discord_message_id, message, in_text_valid, updated_at):
         cur.execute("""
             UPDATE participation_logs
             SET message = %s, in_text_valid = %s, updated_at = %s
-            WHERE discord_message_id = '%s'
+            WHERE discord_message_id = %s
         """, (message, in_text_valid, updated_at, discord_message_id))
         conn.commit()
         total_db_operations.inc()
@@ -142,7 +142,7 @@ def delete_log(discord_message_id):
             """
             UPDATE participation_logs
             SET deleted_at = %s
-            WHERE discord_message_id = '%s'
+            WHERE discord_message_id = %s
             """,
             (ist_time, discord_message_id),
         )
@@ -221,7 +221,7 @@ def save_cp_log(student_id, name, solved_questions, day):
                     WHERE stu_id = %s;
                 ''', (q_id, student_id))
 
-            for i in range(len(solved_questions)):
+            for i in range(min(len(solved_questions), 3)):
                 field = f"q{i + 1}"
                 cur.execute(f'''
                     UPDATE student_list_2024

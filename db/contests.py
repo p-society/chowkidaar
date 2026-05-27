@@ -38,6 +38,8 @@ from typing import List, Optional, Tuple
 import psycopg2
 
 from db.db import connect_to_database, total_db_operations
+
+_last_contest_poll_at_exists = None
 from db.contest_calendar import any_contest_between
 from integrations.contest_types import ContestEntry
 from integrations.leetcode_contests import (
@@ -220,17 +222,24 @@ def _record_contests_db_tx(
                 if is_new:
                     newly_recorded.append(entry)
 
-        # 3. Update last poll status timestamp if the column exists
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.columns 
-                    WHERE table_name = 'student_list_2024' 
-                      AND column_name = 'last_contest_poll_at'
-                );
-            """)
-            column_exists = cur.fetchone()[0]
-            if column_exists:
+        # 3. Update last poll status timestamp if the column exists (cached in-memory)
+        global _last_contest_poll_at_exists
+        if _last_contest_poll_at_exists is None:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.columns 
+                            WHERE table_name = 'student_list_2024' 
+                              AND column_name = 'last_contest_poll_at'
+                        );
+                    """)
+                    _last_contest_poll_at_exists = cur.fetchone()[0]
+            except Exception:
+                _last_contest_poll_at_exists = False
+
+        if _last_contest_poll_at_exists:
+            with conn.cursor() as cur:
                 cur.execute(
                     """
                     UPDATE student_list_2024
