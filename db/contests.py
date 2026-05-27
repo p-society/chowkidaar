@@ -282,11 +282,17 @@ def _record_contests_db_tx(
         for badge_key, qualifies in badge_qualifiers.items():
             if not qualifies:
                 continue
+            with conn.cursor() as sp_cur:
+                sp_cur.execute("SAVEPOINT award_badge_sp;")
             try:
                 meta = award_badge(discord_user_id, badge_key, conn=conn)
                 if meta is not None:
                     awarded_badges.append(meta)
+                with conn.cursor() as sp_cur:
+                    sp_cur.execute("RELEASE SAVEPOINT award_badge_sp;")
             except Exception as e:
+                with conn.cursor() as sp_cur:
+                    sp_cur.execute("ROLLBACK TO SAVEPOINT award_badge_sp;")
                 logging.error(f"{badge_key} award failed for {discord_user_id}: {e}")
 
         conn.commit()
