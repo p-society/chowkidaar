@@ -141,14 +141,24 @@ class CardData:
 # Font helper
 # ──────────────────────────────────────────────────────────────────────────
 
+_cached_fonts = {}
+
 def _load_font(candidates: Sequence[str], size: int) -> ImageFont.FreeTypeFont:
+    cache_key = (tuple(candidates), size)
+    if cache_key in _cached_fonts:
+        return _cached_fonts[cache_key]
+
     for path in candidates:
         try:
-            return ImageFont.truetype(path, size)
+            font = ImageFont.truetype(path, size)
+            _cached_fonts[cache_key] = font
+            return font
         except (OSError, IOError):
             continue
     # Last resort — PIL's bitmap default. Doesn't honor `size`, but at least renders.
-    return ImageFont.load_default()
+    font = ImageFont.load_default()
+    _cached_fonts[cache_key] = font
+    return font
 
 
 def _font_regular(size: int) -> ImageFont.FreeTypeFont:
@@ -246,25 +256,14 @@ def _draw_rounded_card(draw: ImageDraw.ImageDraw, box, radius: int, fill):
 # Public renderer
 # ──────────────────────────────────────────────────────────────────────────
 
-def render_card(data: CardData) -> bytes:
-    # Read branding lazily so swapping configs doesn't require restarting tests.
-    from utils.event_window import get_event_branding
-    branding = get_event_branding()
+_cached_base_bg = None
+_cached_icons = {}
+_cached_badges = {}
 
-    import io
-
-    AV_SIZE = 300
-
-    # Default theme colors (sleek cyber teal + navy)
-    accent_color = ACCENT_TEAL
-    bg_navy = BG_NAVY
-    card_navy = CARD_NAVY
-
-    avatar = (
-        _circular_avatar(data.avatar_webp_bytes, AV_SIZE)
-        if data.avatar_webp_bytes
-        else None
-    )
+def _get_base_background(branding, bg_navy, accent_color) -> Image.Image:
+    global _cached_base_bg
+    if _cached_base_bg is not None:
+        return _cached_base_bg.copy()
 
     bg_path = "assets/images/coding_bg.png"
     if os.path.exists(bg_path):
@@ -324,6 +323,33 @@ def render_card(data: CardData) -> bytes:
 
     # Thin accent divider under the heading
     draw.line([(WIDTH // 2 - 80, 208), (WIDTH // 2 + 80, 208)], fill=accent_color, width=3)
+    
+    _cached_base_bg = img
+    return _cached_base_bg.copy()
+
+
+def render_card(data: CardData) -> bytes:
+    # Read branding lazily so swapping configs doesn't require restarting tests.
+    from utils.event_window import get_event_branding
+    branding = get_event_branding()
+
+    import io
+
+    AV_SIZE = 300
+
+    # Default theme colors (sleek cyber teal + navy)
+    accent_color = ACCENT_TEAL
+    bg_navy = BG_NAVY
+    card_navy = CARD_NAVY
+
+    avatar = (
+        _circular_avatar(data.avatar_webp_bytes, AV_SIZE)
+        if data.avatar_webp_bytes
+        else None
+    )
+
+    img = _get_base_background(branding, bg_navy, accent_color)
+    draw = ImageDraw.Draw(img)
 
     # ── Hero band: avatar + name + student_id (y ≈ 240–640) ──
     if not avatar:
@@ -431,13 +457,17 @@ def render_card(data: CardData) -> bytes:
         # Construct path to the image asset directory
         image_asset_path = f"assets/images/{local_image_filename}"
 
-        if os.path.exists(image_asset_path):
+        if image_asset_path in _cached_icons:
+            icon_img = _cached_icons[image_asset_path]
+            img.paste(icon_img, (content_x, icon_y), icon_img)
+        elif os.path.exists(image_asset_path):
             # Load, convert to transparent RGBA, and scale to the standard 90x90 canvas slot
             icon_img = (
                 Image.open(image_asset_path)
                 .convert("RGBA")
                 .resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS)
             )
+            _cached_icons[image_asset_path] = icon_img
             img.paste(icon_img, (content_x, icon_y), icon_img)
         else:
             # Fallback block text logic if assets get moved unexpectedly
@@ -482,9 +512,12 @@ def render_card(data: CardData) -> bytes:
         badge_imgs = []
         for i, key in enumerate(data.badge_keys):
             img_path = f"assets/badges/{key}.png"
-            if os.path.exists(img_path):
+            if img_path in _cached_badges:
+                badge_imgs.append(_cached_badges[img_path])
+            elif os.path.exists(img_path):
                 try:
                     b_img = Image.open(img_path).convert("RGBA").resize((EMOJI_SIZE, EMOJI_SIZE), Image.LANCZOS)
+                    _cached_badges[img_path] = b_img
                     badge_imgs.append(b_img)
                 except Exception as e:
                     import logging; logging.getLogger(__name__).error(f"Failed to load badge image {key}: {e}")

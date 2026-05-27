@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, timezone
@@ -63,25 +64,27 @@ class SubmissionsCog(commands.Cog):
         contest_badges: list[dict] = []
 
         # Process CP submissions
-        cp_result = process_slash_submission(student_id, day)
+        cp_result = await asyncio.to_thread(process_slash_submission, student_id, day)
 
-        
         is_legal_time = True
         if "error" not in cp_result:
             # Time bracket check
             from db.db import flag_late
             is_legal_time = is_in_time_bracket(day, datetime.now(timezone.utc))
             if not is_legal_time:
-                flag_late(student_id)
+                await asyncio.to_thread(flag_late, student_id)
 
             # Save log
-            save_log(description, interaction.user.id, interaction.id, interaction.created_at, 1)
+            await asyncio.to_thread(
+                save_log,
+                description, interaction.user.id, interaction.id, interaction.created_at, 1
+            )
             messages_sent_total.inc()
 
             # Milestone badges: award Day 7 / 14 / 25 if this submission crossed
             # the threshold. Wrapped in a try so a badge failure never breaks /submit.
             try:
-                newly_awarded = check_and_award_milestones(interaction.user.id)
+                newly_awarded = await asyncio.to_thread(check_and_award_milestones, interaction.user.id)
             except Exception as e:
                 logger.error(f"Milestone check failed for user {interaction.user.id}: {e}")
                 newly_awarded = []
@@ -121,7 +124,6 @@ class SubmissionsCog(commands.Cog):
                 inline=False,
             )
 
-        
         if not is_legal_time:
             embed.color = discord.Color.orange()
             embed.add_field(name="⚠️ Late Submission", value="This submission was made outside the designated time window and has been marked as late.", inline=False)
@@ -139,10 +141,10 @@ class SubmissionsCog(commands.Cog):
     async def edit_submission(self, interaction: discord.Interaction, student_id: str, day: int, new_description: str):
         await interaction.response.defer()
         
-        cp_result = process_slash_submission(student_id, day)
+        cp_result = await asyncio.to_thread(process_slash_submission, student_id, day)
         
         if "error" not in cp_result:
-            update_log(interaction.id, new_description, 1, datetime.now(timezone.utc))
+            await asyncio.to_thread(update_log, interaction.id, new_description, 1, datetime.now(timezone.utc))
             messages_edited_total.inc()
             
         embed = create_submission_embed(
@@ -157,7 +159,7 @@ class SubmissionsCog(commands.Cog):
     async def delete_submission(self, interaction: discord.Interaction, student_id: str, day: int):
         await interaction.response.defer()
         
-        delete_cp_log(student_id, day)
+        await asyncio.to_thread(delete_cp_log, student_id, day)
         
         embed = discord.Embed(title=f"Day {day} Submission Deleted", color=discord.Color.red())
         embed.description = f"🗑️ The submission for Day {day} has been removed for student {student_id}."
@@ -174,7 +176,7 @@ class SubmissionsCog(commands.Cog):
         await interaction.response.defer()
 
         target = user or interaction.user
-        profile = get_student_profile(target.id)
+        profile = await asyncio.to_thread(get_student_profile, target.id)
         if not profile:
             await interaction.followup.send(
                 f"❌ {target.display_name} has not registered yet.",
@@ -188,7 +190,7 @@ class SubmissionsCog(commands.Cog):
             from utils.event_window import get_event_day_number
             day = get_event_day_number() or 1
         
-        status_result = get_user_status(student_id, day)
+        status_result = await asyncio.to_thread(get_user_status, student_id, day)
         
         if "error" in status_result:
             embed = discord.Embed(title=f"Day {day} Status Error", color=discord.Color.red())

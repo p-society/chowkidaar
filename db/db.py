@@ -11,13 +11,16 @@ DB_URL = os.getenv("NEON_DB_URL")
 
 total_db_operations = Counter('total_db_operations', 'Count of total database ops occured')
 
-def connect_to_database():
+def connect_to_database(purpose: str = None):
     """Central database connection function that tries both connection methods"""
     try:
         if DB_URL:
             try:
                 conn = psycopg2.connect(DB_URL)
-                print("✅ Connected to Neon DB successfully.")
+                if purpose:
+                    print(f"🔌 Connected to Neon DB ({purpose})")
+                else:
+                    print("✅ Connected to Neon DB successfully.")
                 return conn
             except Exception as e:
                 print(f"Failed to connect to Neon DB: {e}")
@@ -34,7 +37,7 @@ def get_student_profile(discord_user_id):
     """
     conn = None
     try:
-        conn = connect_to_database()
+        conn = connect_to_database(purpose="Fetch Student Profile")
         if not conn:
             return None
         with conn.cursor() as cur:
@@ -67,7 +70,7 @@ def get_registered_name(discord_user_id):
     """
     conn = None
     try:
-        conn = connect_to_database()
+        conn = connect_to_database(purpose="Fetch Registered Name")
         if not conn:
             return None
         with conn.cursor() as cur:
@@ -87,7 +90,7 @@ def get_registered_name(discord_user_id):
 
 def save_log(message, discord_user_id, discord_message_id, sent_at, in_text_valid=-1):
     try:
-        conn = connect_to_database()
+        conn = connect_to_database(purpose="Save Discord Message Log")
         cur = conn.cursor()
         cur.execute(
             """
@@ -108,7 +111,7 @@ def save_log(message, discord_user_id, discord_message_id, sent_at, in_text_vali
 
 def update_log(discord_message_id, message, in_text_valid, updated_at):
     try:
-        conn = connect_to_database()
+        conn = connect_to_database(purpose="Update Discord Message Log")
         cur = conn.cursor()
         cur.execute("""
             UPDATE participation_logs
@@ -132,7 +135,7 @@ def update_log(discord_message_id, message, in_text_valid, updated_at):
 
 def delete_log(discord_message_id):
     try:
-        conn = connect_to_database()
+        conn = connect_to_database(purpose="Delete Discord Message Log")
         cur = conn.cursor()
         ist_time = get_ist_time()
         cur.execute(
@@ -154,9 +157,27 @@ def delete_log(discord_message_id):
         conn.close()
 
 # CP logs related functions
+def _get_day_question_ids(day):
+    try:
+        import json
+        questions_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "configs", "questions.json")
+        with open(questions_file, "r") as file:
+            questions = json.load(file)
+        day_questions = questions.get(str(day)) or []
+        ids = []
+        for q in day_questions:
+            if q.startswith("LC") or q.startswith("CF"):
+                ids.append(q[3:])
+            else:
+                ids.append(q)
+        return ids
+    except Exception as e:
+        print(f"Error loading day questions: {e}")
+        return []
+
 def save_cp_log(student_id, name, solved_questions, day):
     """Save CP log to database, cleaning up any existing log for this day first."""
-    conn = connect_to_database()
+    conn = connect_to_database(purpose="Save CP Submission Log")
     if not conn:
         return
 
@@ -170,6 +191,7 @@ def save_cp_log(student_id, name, solved_questions, day):
 
             # 2. Clean up any existing submission for this day from q1, q2, q3
             # and decrement total_solved accordingly.
+            day_question_ids = _get_day_question_ids(day)
             fields = ["q1", "q2", "q3"]
             for field in fields:
                 cur.execute(f'SELECT "{field}" FROM student_list_2024 WHERE stu_id = %s;', (student_id,))
@@ -182,7 +204,23 @@ def save_cp_log(student_id, name, solved_questions, day):
                         WHERE stu_id = %s;
                     ''', (str(day), student_id))
 
+            # Remove any of this day's question IDs from all_solved array to prevent duplicate accumulation
+            for q_id in day_question_ids:
+                cur.execute('''
+                    UPDATE student_list_2024
+                    SET all_solved = array_remove(all_solved, %s)
+                    WHERE stu_id = %s;
+                ''', (q_id, student_id))
+
             # 3. Append the new solved questions and increment total_solved
+            # First, clean any potential duplicates to be absolutely safe:
+            for q_id in solved_questions:
+                cur.execute('''
+                    UPDATE student_list_2024
+                    SET all_solved = array_remove(all_solved, %s)
+                    WHERE stu_id = %s;
+                ''', (q_id, student_id))
+
             for i in range(len(solved_questions)):
                 field = f"q{i + 1}"
                 cur.execute(f'''
@@ -203,38 +241,71 @@ def save_cp_log(student_id, name, solved_questions, day):
 
 def delete_cp_log(student_id, day):
     """Delete CP log from database"""
-    conn = connect_to_database()
+    conn = connect_to_database(purpose="Delete CP Submission Log")
     if conn is None:
         return
 
-    with conn.cursor() as cur:
-        fields = ["q1", "q2", "q3"]
-        count_removed = 0
+    try:
+        with conn.cursor() as cur:
+            fields = ["q1", "q2", "q3"]
+            count_removed = 0
 
-        for field in fields:
-            cur.execute(f"""
-                SELECT "{field}" FROM "student_list_2024" WHERE "stu_id" = %s;
-            """, (student_id,))
-            result = cur.fetchone()
-
-            if result and day in result[0]:
+            for field in fields:
                 cur.execute(f"""
-                    UPDATE "student_list_2024"
-                    SET "{field}" = array_remove("{field}", %s),
-                        "total_solved" = "total_solved" - 1
-                    WHERE "stu_id" = %s;
-                """, (day, student_id))
-                count_removed += 1
+                    SELECT "{field}" FROM "student_list_2024" WHERE "stu_id" = %s;
+                """, (student_id,))
+                result = cur.fetchone()
 
-        conn.commit()
-        print(f"✅ Deleted '{day}' from {count_removed} field(s) for student '{student_id}'.")
+                if result and str(day) in result[0]:
+                    cur.execute(f"""
+                        UPDATE "student_list_2024"
+                        SET "{field}" = array_remove("{field}", %s),
+                            "total_solved" = GREATEST("total_solved" - 1, 0)
+                        WHERE "stu_id" = %s;
+                    """, (str(day), student_id))
+                    count_removed += 1
+
+            # Remove question IDs from all_solved array
+            day_question_ids = _get_day_question_ids(day)
+            for q_id in day_question_ids:
+                cur.execute('''
+                    UPDATE student_list_2024
+                    SET all_solved = array_remove(all_solved, %s)
+                    WHERE stu_id = %s;
+                ''', (q_id, student_id))
+
+            # Deletion Streak Fix: find matching participation_logs entry and mark it as deleted
+            cur.execute("SELECT discord_user_id FROM student_list_2024 WHERE stu_id = %s;", (student_id,))
+            user_row = cur.fetchone()
+            if user_row and user_row[0]:
+                discord_user_id = user_row[0]
+                cur.execute("SELECT initial_time, final_time FROM day_brackets WHERE day = %s;", (str(day),))
+                bracket = cur.fetchone()
+                if bracket:
+                    initial_time, final_time = bracket[0], bracket[1]
+                    cur.execute(
+                        """
+                        UPDATE participation_logs
+                        SET deleted_at = %s
+                        WHERE discord_user_id = %s
+                          AND sent_at >= %s
+                          AND sent_at <= %s
+                          AND deleted_at IS NULL
+                        """,
+                        (get_ist_time(), discord_user_id, initial_time, final_time)
+                    )
+
+            conn.commit()
+            print(f"✅ Deleted '{day}' from {count_removed} field(s) for student '{student_id}'.")
+    except Exception as e:
+        print(f"Error in delete_cp_log: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 # Utility functions
 def get_ist_time():
-    utc_now = datetime.datetime.now()
-    ist = pytz.timezone('Asia/Kolkata')
-    ist_now = utc_now.replace(tzinfo=pytz.utc).astimezone(ist)
-    return ist_now
+    return datetime.datetime.now(datetime.timezone.utc).astimezone(pytz.timezone('Asia/Kolkata'))
 
 def register_user(
     student_id: str,
@@ -259,7 +330,7 @@ def register_user(
         bool: True if successful, False otherwise
     """
     try:
-        conn = connect_to_database()
+        conn = connect_to_database(purpose="Register User")
         if not conn:
             return False
 
@@ -303,7 +374,7 @@ def register_user(
 
 def check_time_bracket(day, timestamp):
     try:
-        conn = connect_to_database()
+        conn = connect_to_database(purpose="Check Time Bracket")
         if not conn:
             raise Exception
         with conn.cursor() as cur:
@@ -332,7 +403,7 @@ def flag_late(stu_id):
     '''
     Just flagging a student late if he msgs late.
     '''
-    conn = connect_to_database()
+    conn = connect_to_database(purpose="Mark Late Submission")
     if not conn:
         raise Exception
     with conn.cursor() as cur:
@@ -349,7 +420,7 @@ def get_bracket_range_db(day):
     '''
     Just returns INITIAL and FINAL time bracket values
     '''
-    conn =connect_to_database()
+    conn = connect_to_database(purpose="Fetch Time Bracket Range")
     if not conn:
         raise Exception
     with conn.cursor() as cur:

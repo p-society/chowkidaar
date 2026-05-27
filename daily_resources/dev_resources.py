@@ -111,21 +111,33 @@ class DevResourcesScheduler:
                 day_str = str(day)
                 if day_str in self.resources:
                     channel = self.bot.get_channel(self.channel_id)
+                    if not channel:
+                        try:
+                            channel = await self.bot.fetch_channel(self.channel_id)
+                        except Exception as e:
+                            logger.error(f"Failed to fetch channel {self.channel_id}: {e}", 
+                                         extra={"tags": {"event": "daily_resources"}})
+                    
                     if channel:
                         resources_list = self.resources[day_str]
                         embed = create_dev_resources_embed(day, resources_list, self.config)
-                        sent_message = await channel.send(embed=embed)
-                    try:
-                        await self.unpin_previous_messages(channel)    
-                        await sent_message.pin()
-                        logger.info(f"Sent day {day} dev resources to channel", 
-                                  extra={"tags": {"event": "daily_resources"}})
-                    except Exception as pin_error:
-                        logger.error(f"Failed to pin message for day {day}: {pin_error}", 
-                                  extra={"tags": {"event": "daily_resources"}})
+                        try:
+                            sent_message = await channel.send(embed=embed)
+                            try:
+                                await self.unpin_previous_messages(channel)
+                                await sent_message.pin()
+                            except Exception as pin_error:
+                                logger.error(f"Failed to pin message for day {day}: {pin_error}", 
+                                             extra={"tags": {"event": "daily_resources"}})
+                            
+                            logger.info(f"Sent day {day} dev resources to channel", 
+                                        extra={"tags": {"event": "daily_resources"}})
+                        except Exception as send_error:
+                            logger.error(f"Failed to send dev resources message: {send_error}", 
+                                         extra={"tags": {"event": "daily_resources"}})
                     else:
                         logger.error(f"Channel {self.channel_id} not found", 
-                                  extra={"tags": {"event": "daily_resources"}})
+                                   extra={"tags": {"event": "daily_resources"}})
                 else:
                     logger.error(f"No dev resources found for day {day}", 
                               extra={"tags": {"event": "daily_resources"}})

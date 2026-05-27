@@ -31,9 +31,12 @@ import psycopg2
 from db.db import connect_to_database, total_db_operations
 
 
-def was_sent(contest_url: str, reminder_type: str) -> bool:
+def was_sent(contest_url: str, reminder_type: str, conn=None) -> bool:
     """True if we already recorded sending this (contest_url, reminder_type)."""
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database(purpose="Check if Reminder Sent")
+        should_close = True
     if not conn:
         # DB down: be cautious — claim it's not sent so the caller will
         # attempt it. The mark_sent INSERT will fail the same way, so we
@@ -60,10 +63,11 @@ def was_sent(contest_url: str, reminder_type: str) -> bool:
         logging.error(f"was_sent error: {e}")
         return False
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
-def mark_sent(contest_url: str, reminder_type: str) -> bool:
+def mark_sent(contest_url: str, reminder_type: str, conn=None) -> bool:
     """
     Idempotent INSERT. Returns True iff this call actually inserted the row.
 
@@ -75,7 +79,10 @@ def mark_sent(contest_url: str, reminder_type: str) -> bool:
     so that the reminder is sent exactly once even under concurrent loop
     iterations or rapid restarts.
     """
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database(purpose="Mark Reminder Sent")
+        should_close = True
     if not conn:
         return False
     try:
@@ -106,12 +113,13 @@ def mark_sent(contest_url: str, reminder_type: str) -> bool:
         conn.rollback()
         return False
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
 def prune_older_than(days: int = 30) -> int:
     """Delete reminder rows older than `days`. Returns rows deleted."""
-    conn = connect_to_database()
+    conn = connect_to_database(purpose="Prune Old Reminders")
     if not conn:
         return 0
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)

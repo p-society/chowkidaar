@@ -74,7 +74,7 @@ def sync_badges_to_db() -> None:
     Performs an UPSERT (INSERT ON CONFLICT UPDATE) for each badge.
     """
     from db.db import connect_to_database
-    conn = connect_to_database()
+    conn = connect_to_database(purpose="Auto-Sync Badge Catalog")
     if not conn:
         print("Failed to connect to database for badge sync")
         return

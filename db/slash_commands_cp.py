@@ -31,7 +31,7 @@ def process_slash_submission(user_id: str, day: int):
     if not day_questions:
         return {"error": f"No questions found for day {day}"}
     
-    conn = connect_to_database()
+    conn = connect_to_database(purpose="Lookup Student Handles")
     if not conn:
         return {"error": "Could not connect to database"}
         
@@ -51,54 +51,50 @@ def process_slash_submission(user_id: str, day: int):
             
             if not lc_handle or not cf_handle:
                 return {"error": "User's LeetCode or CodeForces handle not found. Please register first using `/register`."}
-    
-        # Get submissions using stored handles
-        lc_submissions = get_leetcode_recent_submissions(lc_handle)
-        
-        # Currently the CodeForces function in the original file returns {}, let's actually call it if needed or follow original implementation
-        # The original code did: cf_submissions = {}
-        # Let's fix that bug and actually get CF submissions
-        try:
-            cf_submissions = get_codeforces_recent_submissions(cf_handle)
-        except Exception:
-            cf_submissions = {}
-            
-        if isinstance(lc_submissions, dict) and 'error' in lc_submissions:
-            return {"error": f"LeetCode error: {lc_submissions['message']}"}
-        if isinstance(cf_submissions, dict) and 'error' in cf_submissions:
-            return {"error": f"CodeForces error: {cf_submissions['message']}"}
-        
-        solved = []
-        for idx, q in enumerate(day_questions):
-            if q.startswith("LC"):
-                question_id = q[3:]
-                if check_lc(question_id, lc_submissions):
-                    solved.append(question_id)
-            elif q.startswith("CF"):
-                question_id = q[3:]
-                if check_cf(question_id, cf_submissions):
-                    solved.append(question_id)
-        
-        try:
-            save_cp_log(user_id, name, solved, day)
-        except Exception as e:
-            return {"error": f"Database error: {str(e)}"}
-        
-        return {
-            "status": "success",
-            "solved_questions": solved,
-            "total_questions": len(day_questions),
-            "day": day,
-            "user_id": user_id,
-            "name": name,
-            "day_questions": day_questions
-        }
-        
     except Exception as e:
-        return {"error": f"Error processing submissions: {str(e)}"}
+        return {"error": f"Error fetching student: {str(e)}"}
     finally:
-        if conn:
-            conn.close()
+        conn.close()
+    
+    # Get submissions using stored handles
+    lc_submissions = get_leetcode_recent_submissions(lc_handle)
+    
+    # Get CF submissions
+    try:
+        cf_submissions = get_codeforces_recent_submissions(cf_handle)
+    except Exception:
+        cf_submissions = {}
+        
+    if isinstance(lc_submissions, dict) and 'error' in lc_submissions:
+        return {"error": f"LeetCode error: {lc_submissions['message']}"}
+    if isinstance(cf_submissions, dict) and 'error' in cf_submissions:
+        return {"error": f"CodeForces error: {cf_submissions['message']}"}
+    
+    solved = []
+    for idx, q in enumerate(day_questions):
+        if q.startswith("LC"):
+            question_id = q[3:]
+            if check_lc(question_id, lc_submissions):
+                solved.append(question_id)
+        elif q.startswith("CF"):
+            question_id = q[3:]
+            if check_cf(question_id, cf_submissions):
+                solved.append(question_id)
+    
+    try:
+        save_cp_log(user_id, name, solved, day)
+    except Exception as e:
+        return {"error": f"Database error: {str(e)}"}
+    
+    return {
+        "status": "success",
+        "solved_questions": solved,
+        "total_questions": len(day_questions),
+        "day": day,
+        "user_id": user_id,
+        "name": name,
+        "day_questions": day_questions
+    }
 
 def get_user_status(user_id: str, day: int):
     """
@@ -108,7 +104,7 @@ def get_user_status(user_id: str, day: int):
     if not day_questions:
         return {"error": f"No questions found for day {day}"}
         
-    conn = connect_to_database()
+    conn = connect_to_database(purpose="Fetch User CP Status")
     if not conn:
         return {"error": "Could not connect to database"}
         

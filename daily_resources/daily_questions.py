@@ -104,17 +104,29 @@ class DailyQuestionScheduler:
                 day_str = str(day)
                 if day_str in self.questions:
                     channel = self.bot.get_channel(self.channel_id)
+                    if not channel:
+                        try:
+                            channel = await self.bot.fetch_channel(self.channel_id)
+                        except Exception as e:
+                            logger.error(f"Failed to fetch channel {self.channel_id}: {e}", 
+                                         extra={"tags": {"event": "daily_question"}})
+                    
                     if channel:
                         questions_list = self.questions[day_str]
                         embed = create_daily_question_embed(day, questions_list, self.config)
-                        cp_message = await channel.send(embed=embed)
-                    try:
-                        await cp_message.pin()
-                        logger.info(f"Sent day {day} dev questions to channel", 
-                                  extra={"tags": {"event": "daily_resources"}})
-                    except Exception as pin_error:
-                        logger.error(f"Failed to pin message for day {day}: {pin_error}", 
-                                  extra={"tags": {"event": "daily_resources"}})
+                        try:
+                            cp_message = await channel.send(embed=embed)
+                            try:
+                                await cp_message.pin()
+                            except Exception as pin_error:
+                                logger.error(f"Failed to pin message for day {day}: {pin_error}", 
+                                             extra={"tags": {"event": "daily_resources"}})
+                            
+                            logger.info(f"Sent day {day} dev questions to channel", 
+                                        extra={"tags": {"event": "daily_resources"}})
+                        except Exception as send_error:
+                            logger.error(f"Failed to send daily question message: {send_error}", 
+                                         extra={"tags": {"event": "daily_question"}})
                     else:
                         logger.error(f"Channel {self.channel_id} not found", 
                                    extra={"tags": {"event": "daily_question"}})

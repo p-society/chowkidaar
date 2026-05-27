@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 import logging
+import asyncio
 from datetime import datetime, timezone, timedelta
 
 from config import WATCHED_CHANNEL_ID, CONTEST_ROLE_ID
@@ -28,6 +29,31 @@ _REMINDER_WINDOWS = [
 _FAILURE_THRESHOLD_FOR_BACKOFF = 3
 # When throttled, skip this many subsequent loop iterations before retrying.
 _BACKOFF_TICKS = 6  # 6 ticks × 5 min = 30 min cooldown
+
+
+def _process_contest_reminders_tx(contests, now) -> list[tuple]:
+    from db.db import connect_to_database
+    from db.contest_reminders import was_sent, mark_sent
+    conn = connect_to_database(purpose="Contest Reminders Dedup")
+    if not conn:
+        return []
+    
+    to_send = []
+    try:
+        for c in contests:
+            time_left = c.start_time - now
+            for label, target, half_window in _REMINDER_WINDOWS:
+                lower, upper = target - half_window, target + half_window
+                if not (lower <= time_left <= upper):
+                    continue
+                if was_sent(c.url, label, conn=conn):
+                    continue
+                if not mark_sent(c.url, label, conn=conn):
+                    continue
+                to_send.append((c, label))
+        return to_send
+    finally:
+        conn.close()
 
 
 class ContestsCog(commands.Cog):
@@ -128,24 +154,15 @@ class ContestsCog(commands.Cog):
             return
 
         # ── 4. For each upcoming contest, fire any matching reminder windows.
-        #    mark_sent does the dedup via UNIQUE constraint, so this is safe
-        #    against bot restarts and concurrent iterations.
-        for c in contests:
-            time_left = c.start_time - now
-            for label, target, half_window in _REMINDER_WINDOWS:
-                lower, upper = target - half_window, target + half_window
-                if not (lower <= time_left <= upper):
-                    continue
-                if was_sent(c.url, label):
-                    continue
-                if not mark_sent(c.url, label):
-                    # Another iteration beat us to it; skip silently.
-                    continue
-                title, mention_role = _reminder_copy(label)
-                try:
-                    await self.send_reminder(channel, c, title, mention_role=mention_role)
-                except Exception as e:
-                    logger.error(f"reminder send failed for {c.url} [{label}]: {e}")
+        #    All DB checks are offloaded and consolidated to save resources!
+        reminders_to_send = await asyncio.to_thread(_process_contest_reminders_tx, contests, now)
+
+        for c, label in reminders_to_send:
+            title, mention_role = _reminder_copy(label)
+            try:
+                await self.send_reminder(channel, c, title, mention_role=mention_role)
+            except Exception as e:
+                logger.error(f"reminder send failed for {c.url} [{label}]: {e}")
 
     @reminder_loop.before_loop
     async def before_reminder_loop(self):

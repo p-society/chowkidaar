@@ -33,7 +33,7 @@ def fetch_clist_upcoming() -> List[UpcomingContest]:
     now_str = now.strftime('%Y-%m-%dT%H:%M:%S')
 
     params = {
-        'resource__regex': 'codeforces.com|leetcode.com|codechef.com',
+        'resource__regex': '^(codeforces\\.com|leetcode\\.com|codechef\\.com)$',
         'start__gte': now_str,
         'order_by': 'start',
         'limit': 50
@@ -52,7 +52,16 @@ def fetch_clist_upcoming() -> List[UpcomingContest]:
                 'leetcode.com': 'LeetCode',
                 'codechef.com': 'CodeChef'
             }
-            platform = platform_map.get(platform_raw, platform_raw)
+            if platform_raw not in platform_map:
+                continue
+            
+            platform = platform_map[platform_raw]
+            event_name = c.get('event', 'Unknown Contest')
+            
+            # Exclude non-CP contests (like Dev challenges, hackathons, projects)
+            lower_name = event_name.lower()
+            if "dev challenge" in lower_name or "hackathon" in lower_name or "project" in lower_name:
+                continue
             
             # Start time is in UTC ISO format like '2026-05-30T14:35:00'
             start_str = c.get('start')
@@ -67,7 +76,7 @@ def fetch_clist_upcoming() -> List[UpcomingContest]:
             
             contests.append(UpcomingContest(
                 platform=platform,
-                name=c.get('event', 'Unknown Contest'),
+                name=event_name,
                 url=c.get('href', ''),
                 start_time=start_time,
                 duration=timedelta(seconds=duration_secs),

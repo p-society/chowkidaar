@@ -54,9 +54,12 @@ def _fetch_badge_meta(cur, badge_key: str) -> Optional[dict]:
     return dict(row) if row else None
 
 
-def list_user_badges(discord_user_id: int) -> List[dict]:
+def list_user_badges(discord_user_id: int, conn=None) -> List[dict]:
     """Return all badges (with metadata + awarded_at) for one user."""
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return []
     try:
@@ -77,11 +80,15 @@ def list_user_badges(discord_user_id: int) -> List[dict]:
         print(f"list_user_badges error: {e}")
         return []
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
-def has_badge(discord_user_id: int, badge_key: str) -> bool:
-    conn = connect_to_database()
+def has_badge(discord_user_id: int, badge_key: str, conn=None) -> bool:
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return False
     try:
@@ -95,15 +102,19 @@ def has_badge(discord_user_id: int, badge_key: str) -> bool:
         print(f"has_badge error: {e}")
         return False
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
-def award_badge(discord_user_id: int, badge_key: str) -> Optional[dict]:
+def award_badge(discord_user_id: int, badge_key: str, conn=None) -> Optional[dict]:
     """
     Award the badge to the user. Idempotent — if they already have it,
     returns None. Otherwise returns the badge metadata dict.
     """
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return None
     try:
@@ -128,19 +139,24 @@ def award_badge(discord_user_id: int, badge_key: str) -> Optional[dict]:
         conn.rollback()
         return None
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
 def count_distinct_submission_days(
     discord_user_id: int,
     start_utc: datetime,
     end_utc: datetime,
+    conn=None,
 ) -> int:
     """
     Count the number of distinct calendar days (UTC) on which this user has
     a valid, non-deleted submission inside [start_utc, end_utc).
     """
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return 0
     try:
@@ -163,15 +179,19 @@ def count_distinct_submission_days(
         print(f"count_distinct_submission_days error: {e}")
         return 0
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
-def get_top_badge_emoji(discord_user_id: int) -> Optional[str]:
+def get_top_badge_emoji(discord_user_id: int, conn=None) -> Optional[str]:
     """
     Return the emoji of the highest-priority badge this user has earned,
     or None if they have no badges (or none of their badges have an emoji set).
     """
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return None
     try:
@@ -194,17 +214,21 @@ def get_top_badge_emoji(discord_user_id: int) -> Optional[str]:
         print(f"get_top_badge_emoji error: {e}")
         return None
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 def format_name_with_badge(discord_user_id: int, name: str) -> str:
     return name
 
 
-def get_all_badge_emojis() -> List[str]:
+def get_all_badge_emojis(conn=None) -> List[str]:
     """Return every distinct emoji currently configured in the badges table.
 
     Used by the nickname helper to know what prefixes to strip.
     """
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return []
     try:
@@ -215,10 +239,11 @@ def get_all_badge_emojis() -> List[str]:
         print(f"get_all_badge_emojis error: {e}")
         return []
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
-def current_streak(discord_user_id: int) -> int:
+def current_streak(discord_user_id: int, conn=None) -> int:
     """
     Count the user's current consecutive-day submission streak, anchored to
     today (UTC). Walks backwards from today through participation_logs:
@@ -231,7 +256,10 @@ def current_streak(discord_user_id: int) -> int:
     The walk is bounded to the event window so a streak doesn't accidentally
     extend before the event started.
     """
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return 0
     try:
@@ -257,13 +285,14 @@ def current_streak(discord_user_id: int) -> int:
         print(f"current_streak error: {e}")
         return 0
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
     if not dates:
         return 0
 
-    from datetime import date, timedelta
-    today = date.today()
+    from datetime import datetime, timezone, timedelta
+    today = datetime.now(timezone.utc).date()
     # If today isn't in the set, allow yesterday as the anchor so missing today
     # doesn't pre-emptively break the streak.
     cursor = today if today in dates else today - timedelta(days=1)
@@ -280,7 +309,7 @@ def current_streak(discord_user_id: int) -> int:
     return streak
 
 
-def max_streak(discord_user_id: int) -> int:
+def max_streak(discord_user_id: int, conn=None) -> int:
     """
     Longest consecutive-day run of valid submissions for this user inside the
     event window (UTC days). "Consecutive" means each day immediately follows
@@ -291,7 +320,10 @@ def max_streak(discord_user_id: int) -> int:
     streak-based milestone badges that, once earned, are kept forever even
     if the user later breaks their streak.
     """
-    conn = connect_to_database()
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
     if not conn:
         return 0
     try:
@@ -315,7 +347,8 @@ def max_streak(discord_user_id: int) -> int:
         print(f"max_streak error: {e}")
         return 0
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
     if not dates:
         return 0
@@ -333,7 +366,7 @@ def max_streak(discord_user_id: int) -> int:
     return best
 
 
-def check_and_award_milestones(discord_user_id: int) -> List[dict]:
+def check_and_award_milestones(discord_user_id: int, conn=None) -> List[dict]:
     """
     Award any milestone badges the user has just earned. Returns metadata for
     each newly awarded badge (so the caller can announce them in Discord).
@@ -343,13 +376,24 @@ def check_and_award_milestones(discord_user_id: int) -> List[dict]:
     14-day earns `day14_done`, 25-day earns `day25_done`. Uses max_streak so
     that once earned, a badge sticks even if the user later breaks their run.
     """
-    days = max_streak(discord_user_id)
+    should_close = False
+    if not conn:
+        conn = connect_to_database()
+        should_close = True
+    if not conn:
+        return []
 
-    newly_awarded: List[dict] = []
-    for threshold, badge_key in MILESTONE_THRESHOLDS:
-        if days < threshold:
-            continue
-        meta = award_badge(discord_user_id, badge_key)
-        if meta is not None:
-            newly_awarded.append(meta)
-    return newly_awarded
+    try:
+        days = max_streak(discord_user_id, conn=conn)
+
+        newly_awarded: List[dict] = []
+        for threshold, badge_key in MILESTONE_THRESHOLDS:
+            if days < threshold:
+                continue
+            meta = award_badge(discord_user_id, badge_key, conn=conn)
+            if meta is not None:
+                newly_awarded.append(meta)
+        return newly_awarded
+    finally:
+        if should_close:
+            conn.close()
