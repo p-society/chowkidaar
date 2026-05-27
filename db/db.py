@@ -89,71 +89,75 @@ def get_registered_name(discord_user_id):
 
 
 def save_log(message, discord_user_id, discord_message_id, sent_at, in_text_valid=-1):
+    conn = connect_to_database(purpose="Save Discord Message Log")
+    if not conn:
+        return
     try:
-        conn = connect_to_database(purpose="Save Discord Message Log")
-        cur = conn.cursor()
-        cur.execute(
-            """
-            INSERT INTO participation_logs (
-                message, discord_user_id, discord_message_id, sent_at, in_text_valid
-            ) VALUES (%s, %s, %s, %s, %s)
-            """,
-            (message, discord_user_id, discord_message_id, sent_at, in_text_valid)
-        )
-        conn.commit()
-        total_db_operations.inc()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO participation_logs (
+                    message, discord_user_id, discord_message_id, sent_at, in_text_valid
+                ) VALUES (%s, %s, %s, %s, %s)
+                """,
+                (message, discord_user_id, discord_message_id, sent_at, in_text_valid)
+            )
+            conn.commit()
+            total_db_operations.inc()
     except psycopg2.Error as e:
         print(f"Error occurred while saving log: {e}")
         conn.rollback()
     finally:
-        cur.close()
         conn.close()
 
 def update_log(discord_message_id, message, in_text_valid, updated_at):
+    conn = connect_to_database(purpose="Update Discord Message Log")
+    if not conn:
+        return False
     try:
-        conn = connect_to_database(purpose="Update Discord Message Log")
-        cur = conn.cursor()
-        cur.execute("""
-            UPDATE participation_logs
-            SET message = %s, in_text_valid = %s, updated_at = %s
-            WHERE discord_message_id = %s
-        """, (message, in_text_valid, updated_at, discord_message_id))
-        conn.commit()
-        total_db_operations.inc()
-        if cur.rowcount == 0:
-            conn.rollback()
-            print(f"No log found for message ID: {discord_message_id}")
-            return False
-        else:
-            return True
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE participation_logs
+                SET message = %s, in_text_valid = %s, updated_at = %s
+                WHERE discord_message_id = %s
+            """, (message, in_text_valid, updated_at, discord_message_id))
+            conn.commit()
+            total_db_operations.inc()
+            if cur.rowcount == 0:
+                conn.rollback()
+                print(f"No log found for message ID: {discord_message_id}")
+                return False
+            else:
+                return True
     except Exception as e:
         print(f"Error updating log: {e}")
         conn.rollback()
+        return False
     finally:
-        cur.close()
         conn.close()
 
 def delete_log(discord_message_id):
+    conn = connect_to_database(purpose="Delete Discord Message Log")
+    if not conn:
+        return
     try:
-        conn = connect_to_database(purpose="Delete Discord Message Log")
-        cur = conn.cursor()
-        ist_time = get_ist_time()
-        cur.execute(
-            """
-            UPDATE participation_logs
-            SET deleted_at = %s
-            WHERE discord_message_id = %s
-            """,
-            (ist_time, discord_message_id),
-        )
-        conn.commit()
-        print(f"Log marked as deleted for message ID: {discord_message_id}")
-        total_db_operations.inc()
+        with conn.cursor() as cur:
+            ist_time = get_ist_time()
+            cur.execute(
+                """
+                UPDATE participation_logs
+                SET deleted_at = %s
+                WHERE discord_message_id = %s
+                """,
+                (ist_time, discord_message_id),
+            )
+            conn.commit()
+            print(f"Log marked as deleted for message ID: {discord_message_id}")
+            total_db_operations.inc()
     except Exception as e:
         print(f"Error updating log: {e}")
         conn.rollback()
     finally:
-        cur.close()
         conn.close()
 
 # CP logs related functions
@@ -373,10 +377,10 @@ def register_user(
 
 
 def check_time_bracket(day, timestamp):
+    conn = connect_to_database(purpose="Check Time Bracket")
+    if not conn:
+        return False
     try:
-        conn = connect_to_database(purpose="Check Time Bracket")
-        if not conn:
-            raise Exception
         with conn.cursor() as cur:
             # Check if the timestamp is present in timebracket for the day.
             cur.execute('''
@@ -386,17 +390,13 @@ def check_time_bracket(day, timestamp):
                 AND %s BETWEEN initial_time AND final_time;
             ''', (day, timestamp)
             )
-
             result = cur.fetchone()
-            cur.close()
-            conn.close()
-            if not result:
-               return False 
-            return True
-
-
+            return result is not None
     except Exception as e:
         print("Error in check_time_bracket", e)
+        return False
+    finally:
+        conn.close()
 
 
 def flag_late(stu_id):
@@ -405,15 +405,20 @@ def flag_late(stu_id):
     '''
     conn = connect_to_database(purpose="Mark Late Submission")
     if not conn:
-        raise Exception
-    with conn.cursor() as cur:
-        cur.execute('''
-            UPDATE student_list_2024
-            SET is_late=True
-            WHERE stu_id=%s
-        ''', (stu_id,))
-    conn.commit()
-    return 
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                UPDATE student_list_2024
+                SET is_late=True
+                WHERE stu_id=%s
+            ''', (stu_id,))
+            conn.commit()
+    except Exception as e:
+        print(f"Error in flag_late: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 
 def get_bracket_range_db(day):
@@ -422,18 +427,24 @@ def get_bracket_range_db(day):
     '''
     conn = connect_to_database(purpose="Fetch Time Bracket Range")
     if not conn:
-        raise Exception
-    with conn.cursor() as cur:
-        cur.execute('''
-            SELECT initial_time, final_time 
-            FROM day_brackets
-            WHERE day=%s
-        ''', (str(day),)
-        )
-        result = cur.fetchone()
-        if result:
-            return result[0], result[1]
         return None
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                SELECT initial_time, final_time 
+                FROM day_brackets
+                WHERE day=%s
+            ''', (str(day),)
+            )
+            result = cur.fetchone()
+            if result:
+                return result[0], result[1]
+            return None
+    except Exception as e:
+        print(f"Error in get_bracket_range_db: {e}")
+        return None
+    finally:
+        conn.close()
 
 
 def update_cp_log_by_day(student_id, day, message, updated_at):
