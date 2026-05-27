@@ -129,14 +129,16 @@ def award_badge(discord_user_id: int, badge_key: str, conn=None) -> Optional[dic
                 (discord_user_id, badge_key),
             )
             inserted = cur.fetchone() is not None
-            conn.commit()
+            if should_close:
+                conn.commit()
             total_db_operations.inc()
             if not inserted:
                 return None
             return _fetch_badge_meta(cur, badge_key)
     except psycopg2.Error as e:
         print(f"award_badge error: {e}")
-        conn.rollback()
+        if should_close:
+            conn.rollback()
         return None
     finally:
         if should_close:
