@@ -46,42 +46,43 @@ def fetch_clist_upcoming() -> List[UpcomingContest]:
         
         contests = []
         for c in data.get('objects', []):
-            platform_raw = c.get('resource')
-            platform_map = {
-                'codeforces.com': 'Codeforces',
-                'leetcode.com': 'LeetCode',
-                'codechef.com': 'CodeChef'
-            }
-            if platform_raw not in platform_map:
-                continue
-            
-            platform = platform_map[platform_raw]
-            event_name = c.get('event', 'Unknown Contest')
-            
-            # Exclude non-CP contests (like Dev challenges, hackathons, projects)
-            lower_name = event_name.lower()
-            if "dev challenge" in lower_name or "hackathon" in lower_name or "project" in lower_name:
-                continue
-            
-            # Start time is in UTC ISO format like '2026-05-30T14:35:00'
-            start_str = c.get('start')
             try:
+                platform_raw = c.get('resource')
+                platform_map = {
+                    'codeforces.com': 'Codeforces',
+                    'leetcode.com': 'LeetCode',
+                    'codechef.com': 'CodeChef'
+                }
+                if platform_raw not in platform_map:
+                    continue
+                
+                platform = platform_map[platform_raw]
+                event_name = c.get('event', 'Unknown Contest')
+                
+                # Exclude non-CP contests (like Dev challenges, hackathons, projects)
+                lower_name = event_name.lower()
+                if "dev challenge" in lower_name or "hackathon" in lower_name or "project" in lower_name:
+                    continue
+                
+                # Start time is in UTC ISO format like '2026-05-30T14:35:00'
+                start_str = c.get('start')
                 start_time = datetime.fromisoformat(start_str)
                 if start_time.tzinfo is None:
                     start_time = start_time.replace(tzinfo=timezone.utc)
-            except ValueError:
+                    
+                duration_secs = int(c.get('duration', 0))
+                
+                contests.append(UpcomingContest(
+                    platform=platform,
+                    name=event_name,
+                    url=c.get('href', ''),
+                    start_time=start_time,
+                    duration=timedelta(seconds=duration_secs),
+                ))
+            except Exception as entry_err:
+                logger.warning(f"Skipping malformed contest entry: {entry_err}")
                 continue
                 
-            duration_secs = int(c.get('duration', 0))
-            
-            contests.append(UpcomingContest(
-                platform=platform,
-                name=event_name,
-                url=c.get('href', ''),
-                start_time=start_time,
-                duration=timedelta(seconds=duration_secs),
-            ))
-            
         return contests
     except Exception as e:
         logger.error(f"Error fetching Clist contests: {e}")
