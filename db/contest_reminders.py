@@ -27,6 +27,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import psycopg2
+from psycopg2 import errors
 
 from db.db import connect_to_database, total_db_operations
 
@@ -55,7 +56,7 @@ def was_sent(contest_url: str, reminder_type: str, conn=None) -> bool:
                 (contest_url, reminder_type),
             )
             return cur.fetchone() is not None
-    except psycopg2.errors.UndefinedTable:
+    except errors.UndefinedTable:
         # Pre-migration — degrade to "never sent" so the in-memory set in
         # the caller still has a chance to dedupe within a single run.
         return False
@@ -100,7 +101,7 @@ def mark_sent(contest_url: str, reminder_type: str, conn=None) -> bool:
             conn.commit()
             total_db_operations.inc()
             return inserted
-    except psycopg2.errors.UndefinedTable:
+    except errors.UndefinedTable:
         # Pre-migration — fall back to "claim we inserted" so the reminder
         # still fires; without the table we can't dedupe across restarts but
         # the in-memory set in the cog still helps within a session.
@@ -132,7 +133,7 @@ def prune_older_than(days: int = 30) -> int:
             n = cur.rowcount
             conn.commit()
             return n
-    except psycopg2.errors.UndefinedTable:
+    except errors.UndefinedTable:
         return 0
     except psycopg2.Error as e:
         logging.error(f"prune_older_than error: {e}")

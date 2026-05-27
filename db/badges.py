@@ -67,7 +67,7 @@ def list_user_badges(discord_user_id: int, conn=None) -> List[dict]:
             cur.execute(
                 """
                 SELECT b.key, b.name, b.description, b.category,
-                       b.discord_role_id, b.emoji, ub.awarded_at
+                       b.discord_role_id, b.emoji, b.display_priority, ub.awarded_at
                 FROM user_badges ub
                 JOIN badges b ON b.key = ub.badge_key
                 WHERE ub.discord_user_id = %s

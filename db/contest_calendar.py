@@ -64,18 +64,19 @@ def _refresh_if_stale() -> None:
         if _cache_loaded_at is not None and (now - _cache_loaded_at) < _CACHE_TTL:
             return
 
-        try:
-            cf = fetch_codeforces_schedule()
-        except (ContestScheduleError, Exception) as e:
-            logging.warning(f"contest_calendar: CF schedule fetch failed: {e}")
-            cf = []
+    try:
+        cf = fetch_codeforces_schedule()
+    except (ContestScheduleError, Exception) as e:
+        logging.warning(f"contest_calendar: CF schedule fetch failed: {e}")
+        cf = []
 
-        try:
-            lc = fetch_leetcode_schedule()
-        except (ContestScheduleError, Exception) as e:
-            logging.warning(f"contest_calendar: LC schedule fetch failed: {e}")
-            lc = []
+    try:
+        lc = fetch_leetcode_schedule()
+    except (ContestScheduleError, Exception) as e:
+        logging.warning(f"contest_calendar: LC schedule fetch failed: {e}")
+        lc = []
 
+    with _lock:
         if not cf and not lc:
             # Both upstreams failed. Flag the cache as untrustworthy so the
             # gating predicate fails-open and we keep awarding points.
@@ -83,7 +84,7 @@ def _refresh_if_stale() -> None:
             return
 
         _cache = cf + lc
-        _cache_loaded_at = now
+        _cache_loaded_at = datetime.now(timezone.utc)
         _last_load_failed = False
 
 

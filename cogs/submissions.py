@@ -5,7 +5,7 @@ from discord.ext import commands
 from datetime import datetime, timezone
 import logging as logger
 
-from db.db import save_log, update_log, delete_cp_log, get_student_profile
+from db.db import save_log, update_log, delete_cp_log, get_student_profile, update_cp_log_by_day
 from db.badges import check_and_award_milestones, format_name_with_badge
 from db.contests import record_user_contests
 from db.slash_commands_cp import process_slash_submission, get_user_status
@@ -144,7 +144,7 @@ class SubmissionsCog(commands.Cog):
         cp_result = await asyncio.to_thread(process_slash_submission, student_id, day)
         
         if "error" not in cp_result:
-            await asyncio.to_thread(update_log, interaction.id, new_description, 1, datetime.now(timezone.utc))
+            await asyncio.to_thread(update_cp_log_by_day, student_id, day, new_description, datetime.now(timezone.utc))
             messages_edited_total.inc()
             
         embed = create_submission_embed(

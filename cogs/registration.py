@@ -44,21 +44,12 @@ def _fetch_profile_data_tx(discord_user_id: int, start_utc, end_utc):
         # 4. Get badge rows
         badge_rows = list_user_badges(discord_user_id, conn=conn)
 
-        # 5. Fetch badge emojis
-        badge_emojis = []
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT b.emoji
-                FROM user_badges ub
-                JOIN badges b ON b.key = ub.badge_key
-                WHERE ub.discord_user_id = %s
-                  AND b.emoji IS NOT NULL
-                ORDER BY b.display_priority ASC
-                """,
-                (discord_user_id,),
-            )
-            badge_emojis = [r[0] for r in cur.fetchall()]
+        # 5. Extract badge emojis directly in Python, sorted by display_priority
+        badge_emojis = [
+            b["emoji"]
+            for b in sorted(badge_rows, key=lambda x: x.get("display_priority", 9999))
+            if b.get("emoji")
+        ]
 
         return {
             "profile": profile,

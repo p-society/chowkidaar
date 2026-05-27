@@ -305,7 +305,7 @@ def delete_cp_log(student_id, day):
 
 # Utility functions
 def get_ist_time():
-    return datetime.datetime.now(datetime.timezone.utc).astimezone(pytz.timezone('Asia/Kolkata'))
+    return datetime.datetime.now(datetime.timezone.utc)
 
 def register_user(
     student_id: str,
@@ -382,7 +382,7 @@ def check_time_bracket(day, timestamp):
             cur.execute('''
                 SELECT *
                 FROM day_brackets 
-                WHERE day = '%s'
+                WHERE day = %s
                 AND %s BETWEEN initial_time AND final_time;
             ''', (day, timestamp)
             )
@@ -434,6 +434,50 @@ def get_bracket_range_db(day):
         if result:
             return result[0], result[1]
         return None
+
+
+def update_cp_log_by_day(student_id, day, message, updated_at):
+    """Find the non-deleted participation log for a student and day, and update its message."""
+    conn = connect_to_database(purpose="Update CP Log By Day")
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cur:
+            # 1. Get discord_user_id
+            cur.execute("SELECT discord_user_id FROM student_list_2024 WHERE stu_id = %s;", (student_id,))
+            user_row = cur.fetchone()
+            if not user_row or not user_row[0]:
+                return False
+            discord_user_id = user_row[0]
+
+            # 2. Get day bracket times
+            cur.execute("SELECT initial_time, final_time FROM day_brackets WHERE day = %s;", (str(day),))
+            bracket = cur.fetchone()
+            if not bracket:
+                return False
+            initial_time, final_time = bracket[0], bracket[1]
+
+            # 3. Update the matching log
+            cur.execute(
+                """
+                UPDATE participation_logs
+                SET message = %s, updated_at = %s
+                WHERE discord_user_id = %s
+                  AND sent_at >= %s
+                  AND sent_at <= %s
+                  AND deleted_at IS NULL
+                """,
+                (message, updated_at, discord_user_id, initial_time, final_time)
+            )
+            conn.commit()
+            total_db_operations.inc()
+            return cur.rowcount > 0
+    except Exception as e:
+        print(f"Error in update_cp_log_by_day: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

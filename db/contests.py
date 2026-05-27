@@ -36,6 +36,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
 import psycopg2
+from psycopg2 import errors
 
 from db.db import connect_to_database, total_db_operations
 
@@ -126,7 +127,7 @@ def _get_last_contest_poll_at(discord_user_id: int) -> Optional[datetime]:
             )
             row = cur.fetchone()
             return row[0] if row and row[0] else None
-    except psycopg2.errors.UndefinedColumn:
+    except errors.UndefinedColumn:
         # Pre-migration — silently degrade.
         return None
     except psycopg2.Error as e:
@@ -153,7 +154,7 @@ def _set_last_contest_poll_at(discord_user_id: int, when: datetime) -> None:
             )
             conn.commit()
             total_db_operations.inc()
-    except psycopg2.errors.UndefinedColumn:
+    except errors.UndefinedColumn:
         # Pre-migration — quietly skip the write.
         conn.rollback()
     except psycopg2.Error as e:

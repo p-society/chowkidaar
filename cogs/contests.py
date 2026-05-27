@@ -46,11 +46,8 @@ def _process_contest_reminders_tx(contests, now) -> list[tuple]:
                 lower, upper = target - half_window, target + half_window
                 if not (lower <= time_left <= upper):
                     continue
-                if was_sent(c.url, label, conn=conn):
-                    continue
-                if not mark_sent(c.url, label, conn=conn):
-                    continue
-                to_send.append((c, label))
+                if mark_sent(c.url, label, conn=conn):
+                    to_send.append((c, label))
         return to_send
     finally:
         conn.close()
