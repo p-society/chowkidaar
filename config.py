@@ -20,8 +20,27 @@ _argv_env = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in _VALID_ENVS else
 environment = os.getenv('ENVIRONMENT') or _argv_env or 'local'
 load_environment(environment)
 
+import logging as _logging
+
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 WATCHED_CHANNEL_ID = int(os.getenv('WATCHED_CHANNEL_ID'))
+CONTEST_ROLE_ID = int(os.getenv('CONTEST_ROLE_ID', '0'))
+CLIST_USERNAME = os.getenv('CLIST_USERNAME')
+CLIST_API_KEY = os.getenv('CLIST_API_KEY')
+
+# Surface common misconfigurations at startup. These are warnings, not
+# hard errors: the bot can still boot and most features keep working,
+# they'll just degrade in predictable ways.
+if not CONTEST_ROLE_ID:
+    _logging.warning(
+        "CONTEST_ROLE_ID is unset — contest reminders will be posted without "
+        "an @role mention. Set CONTEST_ROLE_ID in your .env to enable pings."
+    )
+if not (CLIST_USERNAME and CLIST_API_KEY):
+    _logging.warning(
+        "CLIST_USERNAME / CLIST_API_KEY are unset — /upcoming and the contest "
+        "reminder loop will return no results. Get a key at https://clist.by/api/v4/doc/."
+    )
 
 # Postgres connection settings. The .env files use POSTGRES_* names
 # (matching docker-compose conventions); expose them under both

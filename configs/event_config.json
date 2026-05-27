@@ -13,10 +13,10 @@
   "cp": {
     "duration_days": 25,
     "announcement_intro": "**Day {day} Coding Challenge** 🚀\n\nToday's questions:\n\n",
-    "announcement_outro": "\nRemember to submit your solutions in this channel by end of day! Good luck! 💪"
+    "announcement_outro": "\n⏰ **Remember to log your progress using `/submit` between 10:00 PM and 12:00 PM (Noon) IST!** Good luck! 💪"
   },
   "dev": {
     "announcement_intro": "**Day {day} Development Resources** 📚\n\nToday's learning materials:\n\n",
-    "announcement_outro": "\nExpand your knowledge with these resources. Happy learning! 🧠"
+    "announcement_outro": "\nExpand your knowledge with these resources. Happy learning! 🧠\n⏰ **Remember to log your progress using `/submit` between 10:00 PM and 12:00 PM (Noon) IST!**"
   }
 }

@@ -246,22 +246,42 @@ async def record_user_contests(
         _set_last_contest_poll_at(discord_user_id, now)
         return ([], [])
 
-    # ── INSERT each fetched contest; the UNIQUE constraint skips dupes ──
-    newly_recorded: List[ContestEntry] = []
+    # ── INSERT/UPDATE each fetched contest; retrieve existing ones first to identify new ones ──
+    existing_contests = set()
     conn = connect_to_database()
     if not conn:
         return ([], [])
     try:
         with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT platform, contest_id
+                FROM contest_attendance
+                WHERE discord_user_id = %s
+                """,
+                (discord_user_id,),
+            )
+            for plat, cid in cur.fetchall():
+                existing_contests.add((plat, cid))
+    except psycopg2.Error as e:
+        logging.error(f"Error fetching existing contests for {discord_user_id}: {e}")
+        conn.close()
+        return ([], [])
+
+    newly_recorded: List[ContestEntry] = []
+    try:
+        with conn.cursor() as cur:
             for entry in fetched:
+                is_new = (entry.platform, entry.contest_id) not in existing_contests
                 cur.execute(
                     """
                     INSERT INTO contest_attendance
                         (discord_user_id, platform, contest_id, contest_name,
                          contest_date, rank, rating_delta, points_awarded)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (discord_user_id, platform, contest_id) DO NOTHING
-                    RETURNING id
+                    ON CONFLICT (discord_user_id, platform, contest_id) DO UPDATE
+                    SET rank = COALESCE(contest_attendance.rank, EXCLUDED.rank),
+                        rating_delta = COALESCE(contest_attendance.rating_delta, EXCLUDED.rating_delta)
                     """,
                     (
                         discord_user_id,
@@ -274,12 +294,12 @@ async def record_user_contests(
                         points,
                     ),
                 )
-                if cur.fetchone() is not None:
+                if is_new:
                     newly_recorded.append(entry)
             conn.commit()
             total_db_operations.inc()
     except psycopg2.Error as e:
-        logging.error(f"contest_attendance INSERT failed for {discord_user_id}: {e}")
+        logging.error(f"contest_attendance INSERT/UPDATE failed for {discord_user_id}: {e}")
         conn.rollback()
         return ([], [])
     finally:
@@ -290,10 +310,29 @@ async def record_user_contests(
     # against this point in time.
     _set_last_contest_poll_at(discord_user_id, now)
 
-    if not newly_recorded:
-        return ([], [])
+    # ── Query all recorded contests in the event window to check badge qualifiers ──
+    all_contests = []
+    conn = connect_to_database()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT rank, rating_delta
+                    FROM contest_attendance
+                    WHERE discord_user_id = %s
+                      AND contest_date >= %s
+                      AND contest_date < %s
+                    """,
+                    (discord_user_id, start_utc, end_utc),
+                )
+                all_contests = cur.fetchall()
+        except psycopg2.Error as e:
+            logging.error(f"Error querying contests for badge check for {discord_user_id}: {e}")
+        finally:
+            conn.close()
 
-    # ── Award contest-category badges based on what landed this call ────
+    # ── Award contest-category badges based on the user's history in the event window ────
     # All three are idempotent at the DB layer (UNIQUE on user_badges), so
     # repeated /submit calls won't double-award. award_badge returns the
     # badge metadata dict on first award, None on a no-op.
@@ -304,14 +343,14 @@ async def record_user_contests(
         logging.error(f"db.badges import failed for {discord_user_id}: {e}")
         return (newly_recorded, [])
 
-    # Map badge_key -> "did any newly-recorded contest qualify it?"
+    # Map badge_key -> "did any recorded contest in the event window qualify it?"
     badge_qualifiers = {
-        "contest_participant": True,  # any new contest at all
+        "contest_participant": len(all_contests) > 0,
         "contest_top_100": any(
-            (e.rank is not None and e.rank <= 100) for e in newly_recorded
+            (rank is not None and rank <= 100) for rank, _ in all_contests
         ),
         "contest_rating_climber": any(
-            (e.rating_delta is not None and e.rating_delta > 0) for e in newly_recorded
+            (delta is not None and delta > 0) for _, delta in all_contests
         ),
     }
 

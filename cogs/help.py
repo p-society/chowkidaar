@@ -19,7 +19,8 @@ class HelpCog(commands.Cog):
                 "**`/status`** — Check submission status for a day\n\n"
                 "**`/edit_submission`** — Edit a past submission description\n\n"
                 "**`/delete_submission`** — Delete a past submission\n\n"
-                "**`/sync_badges`** — Sync and award milestone badges"
+                "**`/sync_badges`** — Sync and award milestone badges\n\n"
+                "**`/upcoming`** — Show upcoming CP contests in the next 1 week"
             ),
             color=discord.Color.teal()
         )

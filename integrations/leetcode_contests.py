@@ -122,16 +122,30 @@ def fetch_user_contests(
     if history is None:
         raise LeetCodeAPIError(f"No contest data for handle {handle!r} (user may not exist)")
 
-    entries: List[ContestEntry] = []
+    # Filter and sort the entire raw history chronologically by start time to compute rating deltas
+    valid_history = []
     for row in history:
+        if row.get("contest") and row["contest"].get("startTime"):
+            valid_history.append(row)
+    valid_history.sort(key=lambda r: int(r["contest"]["startTime"]))
+
+    entries: List[ContestEntry] = []
+    prev_rating = 1500.0
+    for row in valid_history:
+        curr_rating = row.get("rating")
+        
+        # Calculate delta if rating is valid, and update previous rating tracker
+        if curr_rating is not None and curr_rating > 0:
+            delta = round(curr_rating - prev_rating)
+            prev_rating = curr_rating
+        else:
+            delta = None
+            
         if only_attended and not row.get("attended"):
             continue
 
-        contest = row.get("contest") or {}
-        start_ts = contest.get("startTime")
-        if start_ts is None:
-            continue
-
+        contest = row["contest"]
+        start_ts = contest["startTime"]
         contest_date = datetime.fromtimestamp(int(start_ts), tz=timezone.utc)
 
         if since is not None and contest_date < since:
@@ -139,10 +153,6 @@ def fetch_user_contests(
         if until is not None and contest_date > until:
             continue
 
-        # LC doesn't expose oldRating/newRating, only the post-contest rating.
-        # Rating delta isn't directly available without a second query for the
-        # *previous* contest's rating, so we leave it as None for now. The
-        # poller can compute deltas by diffing consecutive entries if needed.
         entries.append(
             ContestEntry(
                 platform="leetcode",
@@ -150,10 +160,12 @@ def fetch_user_contests(
                 contest_name=contest.get("title", ""),
                 contest_date=contest_date,
                 rank=row.get("ranking") or None,
-                rating_delta=None,
+                rating_delta=delta,
                 attended=bool(row.get("attended")),
             )
         )
 
+    # Return entries sorted chronologically
     entries.sort(key=lambda e: e.contest_date)
     return entries
+

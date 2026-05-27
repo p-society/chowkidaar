@@ -65,6 +65,8 @@ class SubmissionsCog(commands.Cog):
         # Process CP submissions
         cp_result = process_slash_submission(student_id, day)
 
+        
+        is_legal_time = True
         if "error" not in cp_result:
             # Time bracket check
             from db.db import flag_late
@@ -119,6 +121,11 @@ class SubmissionsCog(commands.Cog):
                 inline=False,
             )
 
+        
+        if not is_legal_time:
+            embed.color = discord.Color.orange()
+            embed.add_field(name="⚠️ Late Submission", value="This submission was made outside the designated time window and has been marked as late.", inline=False)
+            
         await interaction.followup.send(embed=embed)
 
         # Announce any newly-earned badges (assigns role + posts a gold embed).
