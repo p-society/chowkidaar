@@ -1,7 +1,8 @@
 {
   "start_date": "2026-05-19",
   "bot_admins": [
-    1336348458671673354
+    1336348458671673354,
+    803101677460520990
   ],
   "branding": {
     "title": "25 Days of Productivity",
@@ -18,5 +19,13 @@
   "dev": {
     "announcement_intro": "**Day {day} Development Resources** 📚\n\nToday's learning materials:\n\n",
     "announcement_outro": "\nExpand your knowledge with these resources. Happy learning! 🧠\n⏰ **Remember to log your progress using `/submit` between 10:00 PM and 12:00 PM (Noon) IST!**"
+  },
+  "badge_roles": {
+    "day7_done": null,
+    "day14_done": null,
+    "day25_done": null,
+    "contest_participant": null,
+    "contest_top_100": null,
+    "contest_rating_climber": null
   }
 }

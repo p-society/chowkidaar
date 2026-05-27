@@ -168,7 +168,17 @@ Adding a new badge is fully automated and requires zero manual database modifica
 
 To update the bot's content for a new year or season, you will need to modify the JSON configuration files located in the `configs/` directory. You do not need to edit any Python code!
 
-*   **`configs/event_config.json`**: Edit this to change the `start_date`, the `duration_days` of the event, and the template text for daily announcements.
+*   **`configs/event_config.json`**: Edit this to change the `start_date`, the `duration_days` of the event, the template text for daily announcements, and the **`badge_roles`** object to map specific Discord Role IDs to each badge key:
+    ```json
+    "badge_roles": {
+      "day7_done": 123456789012345678,
+      "day14_done": 123456789012345678,
+      "day25_done": 123456789012345678,
+      "contest_participant": 123456789012345678,
+      "contest_top_100": 123456789012345678,
+      "contest_rating_climber": 123456789012345678
+    }
+    ```
 *   **`configs/questions.json`**: This JSON file maps the Day number to the specific LeetCode/CodeForces questions required for that day.
 *   **`configs/dev.json`**: This JSON file contains the daily resource links and descriptions sent to the Development channel.
 
