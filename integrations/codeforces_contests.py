@@ -13,6 +13,8 @@ Public surface:
 
 from __future__ import annotations
 
+import threading
+import time
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -21,6 +23,25 @@ import requests
 from integrations.contest_types import ContestEntry
 
 CF_USER_RATING_URL = "https://codeforces.com/api/user.rating"
+
+# Codeforces enforces 1 request every 2 seconds per IP. We respect that here
+# with a process-wide guard so concurrent /submit handlers can't accidentally
+# burst and get rate-limited. The lock + monotonic timestamp pattern is
+# thread-safe and friendly to asyncio.to_thread callers.
+_CF_RATE_LOCK = threading.Lock()
+_CF_LAST_CALL_AT: float = 0.0
+_CF_MIN_INTERVAL_SEC: float = 2.0
+
+
+def _wait_for_rate_limit() -> None:
+    """Sleep just long enough to ensure ≥_CF_MIN_INTERVAL_SEC between calls."""
+    global _CF_LAST_CALL_AT
+    with _CF_RATE_LOCK:
+        now = time.monotonic()
+        wait = _CF_LAST_CALL_AT + _CF_MIN_INTERVAL_SEC - now
+        if wait > 0:
+            time.sleep(wait)
+        _CF_LAST_CALL_AT = time.monotonic()
 
 
 class CodeforcesAPIError(RuntimeError):
@@ -48,9 +69,10 @@ def fetch_user_contests(
         requests.RequestException: on network failures.
 
     Note:
-        CF rate-limits to 1 req/2 seconds per IP. The poller is responsible
-        for spacing calls; this function does not sleep.
+        CF rate-limits to 1 req/2 seconds per IP. This function blocks on a
+        process-wide lock to enforce that, so concurrent callers are safe.
     """
+    _wait_for_rate_limit()
     resp = requests.get(
         CF_USER_RATING_URL,
         params={"handle": handle},

@@ -11,6 +11,8 @@ Public surface:
 
 from __future__ import annotations
 
+import threading
+import time
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -19,6 +21,24 @@ import requests
 from integrations.contest_types import ContestEntry
 
 LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql"
+
+# LeetCode's GraphQL endpoint is unofficial and has no documented rate limit,
+# but we don't want to get our IP shadow-banned. One request per second is
+# polite and well below anything they'd flag. Same thread-safe pattern as the
+# Codeforces client.
+_LC_RATE_LOCK = threading.Lock()
+_LC_LAST_CALL_AT: float = 0.0
+_LC_MIN_INTERVAL_SEC: float = 1.0
+
+
+def _wait_for_rate_limit() -> None:
+    global _LC_LAST_CALL_AT
+    with _LC_RATE_LOCK:
+        now = time.monotonic()
+        wait = _LC_LAST_CALL_AT + _LC_MIN_INTERVAL_SEC - now
+        if wait > 0:
+            time.sleep(wait)
+        _LC_LAST_CALL_AT = time.monotonic()
 
 # Query both summary stats and full history. We only use the history in
 # fetch_user_contests, but keeping the summary makes it easy to surface
@@ -55,6 +75,7 @@ class LeetCodeAPIError(RuntimeError):
 
 
 def _post(username: str, timeout: float = 10.0) -> dict:
+    _wait_for_rate_limit()
     resp = requests.post(
         LEETCODE_GRAPHQL_URL,
         json={"query": QUERY, "variables": {"username": username}},

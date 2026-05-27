@@ -6,6 +6,7 @@ import logging as logger
 
 from db.db import save_log, update_log, delete_cp_log, get_student_profile
 from db.badges import check_and_award_milestones, format_name_with_badge
+from db.contests import record_user_contests
 from db.slash_commands_cp import process_slash_submission, get_user_status
 from utils.permissions import is_watched_channel
 from utils.time_check import is_in_time_bracket
@@ -53,17 +54,24 @@ class SubmissionsCog(commands.Cog):
     @is_watched_channel()
     async def submit(self, interaction: discord.Interaction, student_id: str, day: int, description: str):
         await interaction.response.defer()
-        
+
+        # Pre-initialize side-effect outputs so the embed/announcement code
+        # below is safe even if the CP submission errors out before we get
+        # a chance to compute them.
+        newly_awarded: list[dict] = []
+        new_contests: list = []
+        contest_badges: list[dict] = []
+
         # Process CP submissions
         cp_result = process_slash_submission(student_id, day)
-        
+
         if "error" not in cp_result:
             # Time bracket check
             from db.db import flag_late
             is_legal_time = is_in_time_bracket(day, datetime.now(timezone.utc))
             if not is_legal_time:
                 flag_late(student_id)
-                
+
             # Save log
             save_log(description, interaction.user.id, interaction.id, interaction.created_at, 1)
             messages_sent_total.inc()
@@ -76,15 +84,48 @@ class SubmissionsCog(commands.Cog):
                 logger.error(f"Milestone check failed for user {interaction.user.id}: {e}")
                 newly_awarded = []
 
+            # Contest detection: poll LC + CF for any new contests this user
+            # attended inside the event window, record them, and award any
+            # contest-category badges (participant / top_100 / rating_climber).
+            # The helper handles rate limiting, partial failures, and
+            # idempotency internally and returns both the new contests and
+            # any newly-awarded badge metadata.
+            try:
+                new_contests, contest_badges = await record_user_contests(interaction.user.id)
+            except Exception as e:
+                logger.error(f"Contest poll failed for {interaction.user.id}: {e}")
+                new_contests, contest_badges = [], []
+
         embed = create_submission_embed(
             student_id, cp_result.get('name', 'User'), day, description, cp_result,
             discord_user_id=interaction.user.id,
         )
+
+        # If we detected any new contests this run, surface them in the embed
+        # so the user immediately sees the points they just earned.
+        if new_contests:
+            lc_count = sum(1 for c in new_contests if c.platform == "leetcode")
+            cf_count = sum(1 for c in new_contests if c.platform == "codeforces")
+            from db.contests import contest_points
+            pts = contest_points()
+            parts = []
+            if lc_count:
+                parts.append(f"{lc_count} LeetCode")
+            if cf_count:
+                parts.append(f"{cf_count} Codeforces")
+            embed.add_field(
+                name="⚡ Contests detected",
+                value=f"{' + '.join(parts)}  →  **+{pts * len(new_contests)} pts**",
+                inline=False,
+            )
+
         await interaction.followup.send(embed=embed)
 
         # Announce any newly-earned badges (assigns role + posts a gold embed).
+        # Milestone + contest badges all flow through the same announcer so
+        # the user gets a single celebratory stream of gold embeds.
         if "error" not in cp_result:
-            await announce_badges(interaction, newly_awarded)
+            await announce_badges(interaction, newly_awarded + contest_badges)
 
     @app_commands.command(name="edit_submission", description="Edit a previous daily CP progress submission")
     @is_watched_channel()

@@ -7,6 +7,9 @@
     "title": "25 Days of Productivity",
     "subtitle": "by The Programming Society · IIIT-BH"
   },
+  "points": {
+    "contest_participation": 10
+  },
   "cp": {
     "duration_days": 25,
     "announcement_intro": "**Day {day} Coding Challenge** 🚀\n\nToday's questions:\n\n",
