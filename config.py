@@ -23,7 +23,10 @@ load_environment(environment)
 import logging as _logging
 
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-WATCHED_CHANNEL_ID = int(os.getenv('WATCHED_CHANNEL_ID'))
+_watched_channel_env = os.getenv('WATCHED_CHANNEL_ID')
+WATCHED_CHANNEL_ID = int(_watched_channel_env) if _watched_channel_env and _watched_channel_env.strip() else None
+_contest_reminder_channel_env = os.getenv('CONTEST_REMINDER_CHANNEL_ID')
+CONTEST_REMINDER_CHANNEL_ID = int(_contest_reminder_channel_env) if _contest_reminder_channel_env and _contest_reminder_channel_env.strip() else None
 CONTEST_ROLE_ID = int(os.getenv('CONTEST_ROLE_ID', '0'))
 CLIST_USERNAME = os.getenv('CLIST_USERNAME')
 CLIST_API_KEY = os.getenv('CLIST_API_KEY')
@@ -31,6 +34,14 @@ CLIST_API_KEY = os.getenv('CLIST_API_KEY')
 # Surface common misconfigurations at startup. These are warnings, not
 # hard errors: the bot can still boot and most features keep working,
 # they'll just degrade in predictable ways.
+if not WATCHED_CHANNEL_ID:
+    _logging.warning(
+        "WATCHED_CHANNEL_ID is unset — daily challenge announcements and dev resources are disabled."
+    )
+if not CONTEST_REMINDER_CHANNEL_ID:
+    _logging.warning(
+        "CONTEST_REMINDER_CHANNEL_ID is unset — CP contest reminders are disabled."
+    )
 if not CONTEST_ROLE_ID:
     _logging.warning(
         "CONTEST_ROLE_ID is unset — contest reminders will be posted without "

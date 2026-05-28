@@ -66,10 +66,12 @@ async def on_ready():
     
     # Start the daily question scheduler
     start_date = get_start_date()
-    DailyQuestionScheduler(bot, WATCHED_CHANNEL_ID)
-    DevResourcesScheduler(bot, WATCHED_CHANNEL_ID, start_date)
-    
-    logger.info("Daily schedulers started", extra={"tags": {"event": "scheduler_start"}})
+    if WATCHED_CHANNEL_ID:
+        DailyQuestionScheduler(bot, WATCHED_CHANNEL_ID)
+        DevResourcesScheduler(bot, WATCHED_CHANNEL_ID, start_date)
+        logger.info("Daily schedulers started", extra={"tags": {"event": "scheduler_start"}})
+    else:
+        logger.info("WATCHED_CHANNEL_ID is unset; daily question and resource schedulers were skipped.")
 
 @bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError):

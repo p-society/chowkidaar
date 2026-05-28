@@ -5,7 +5,7 @@ import logging
 import asyncio
 from datetime import datetime, timezone, timedelta
 
-from config import WATCHED_CHANNEL_ID, CONTEST_ROLE_ID
+from config import CONTEST_ROLE_ID, CONTEST_REMINDER_CHANNEL_ID
 from integrations.upcoming_contests import fetch_all_upcoming_contests
 from db.contest_reminders import mark_sent, was_sent
 from utils.permissions import is_watched_channel
@@ -108,6 +108,9 @@ class ContestsCog(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def reminder_loop(self):
+        if not CONTEST_REMINDER_CHANNEL_ID:
+            return
+
         # ── 1. Skip iterations while we're in backoff after consecutive failures
         if self._ticks_to_skip > 0:
             self._ticks_to_skip -= 1
@@ -145,9 +148,9 @@ class ContestsCog(commands.Cog):
         # Successful fetch — reset the counter.
         self._consecutive_failures = 0
 
-        channel = self.bot.get_channel(WATCHED_CHANNEL_ID)
+        channel = self.bot.get_channel(CONTEST_REMINDER_CHANNEL_ID)
         if not channel:
-            logger.warning(f"reminder_loop: WATCHED_CHANNEL_ID {WATCHED_CHANNEL_ID} not found")
+            logger.warning(f"reminder_loop: CONTEST_REMINDER_CHANNEL_ID {CONTEST_REMINDER_CHANNEL_ID} not found")
             return
 
         # ── 4. For each upcoming contest, fire any matching reminder windows.

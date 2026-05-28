@@ -89,12 +89,25 @@ Manages event durations, branding titles, and Discord Role mappings for earned b
 ```
 
 ### 2. Environment Variables (`.env.local`)
-Create `.env.local` based on `.env.example` to store credentials:
+Create `.env.local` based on `.env.example` to store credentials. 
+
+> [!NOTE]
+> Bot slash commands are enabled **server-wide** (across all channels). However, automated daily challenges and contest reminders are routed to specific channels to prevent spam.
+
 ```ini
 DISCORD_TOKEN=your_bot_token_here
 NEON_DB_URL=postgresql://user:password@localhost:5433/db
+
+# Channel for Daily Challenge announcements & Dev learning resources
 WATCHED_CHANNEL_ID=123456789012345678
+
+# Channel for Competitive Programming contest reminders (12h, 15m, 0m before start)
+CONTEST_REMINDER_CHANNEL_ID=123456789012345678
+
+# Discord Role ID to mention/tag during contest reminders
 CONTEST_ROLE_ID=123456789012345678
+
+# Clist.by credentials (needed for upcoming contest fetching)
 CLIST_USERNAME=your_clist_username
 CLIST_API_KEY=your_clist_api_key
 ```
