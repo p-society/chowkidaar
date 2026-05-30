@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 _REMINDER_WINDOWS = [
     ("12h", timedelta(hours=12),  timedelta(minutes=30)),
     ("15m", timedelta(minutes=15), timedelta(minutes=5)),
-    ("0m",  timedelta(minutes=0),  timedelta(minutes=5)),
 ]
 
 # After this many consecutive clist.by failures, throttle the reminder loop.
@@ -60,6 +59,7 @@ class ContestsCog(commands.Cog):
         # the counters below just keep us off clist.by's back during outages.
         self._consecutive_failures = 0
         self._ticks_to_skip = 0
+        self._sent_reminders = set()
         self.reminder_loop.start()
 
     def cog_unload(self):
@@ -148,9 +148,13 @@ class ContestsCog(commands.Cog):
         reminders_to_send = await asyncio.to_thread(_process_contest_reminders_tx, contests, now)
 
         for c, label in reminders_to_send:
+            if (c.url, label) in self._sent_reminders:
+                continue
+                
             title, mention_role = _reminder_copy(label)
             try:
                 await self.send_reminder(channel, c, title, mention_role=mention_role)
+                self._sent_reminders.add((c.url, label))
             except Exception as e:
                 logger.error(f"reminder send failed for {c.url} [{label}]: {e}")
 
@@ -188,9 +192,8 @@ def _reminder_copy(label: str) -> tuple[str, bool]:
         return ("🔔 Contest in 12 Hours! Register now!", True)
     if label == "15m":
         return ("🚨 Contest starting in 15 Minutes!", True)
-    # 0m or anything else: no @role ping; the previous notifications already
-    # nudged everyone, this is just a "live now" marker.
-    return ("🚀 Contest has Started!", False)
+    # Fallback for anything else (should not be reached based on _REMINDER_WINDOWS)
+    return ("🚀 Upcoming Contest!", False)
 
 
 async def setup(bot: commands.Bot):

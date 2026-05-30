@@ -85,7 +85,8 @@ def mark_sent(contest_url: str, reminder_type: str, conn=None) -> bool:
         conn = connect_to_database(purpose="Mark Reminder Sent")
         should_close = True
     if not conn:
-        return False
+        logging.warning("mark_sent: DB down, returning True to rely on in-memory dedup")
+        return True
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -112,7 +113,7 @@ def mark_sent(contest_url: str, reminder_type: str, conn=None) -> bool:
     except psycopg2.Error as e:
         logging.error(f"mark_sent error: {e}")
         conn.rollback()
-        return False
+        return True
     finally:
         if should_close:
             conn.close()
