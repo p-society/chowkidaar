@@ -9,7 +9,6 @@ from config import CONTEST_ROLE_ID, CONTEST_REMINDER_CHANNEL_ID
 from integrations.upcoming_contests import fetch_all_upcoming_contests
 from db.contest_reminders import mark_sent, was_sent
 from utils.permissions import is_watched_channel
-from utils.event_window import get_event_window
 
 logger = logging.getLogger(__name__)
 
@@ -116,17 +115,8 @@ class ContestsCog(commands.Cog):
             self._ticks_to_skip -= 1
             return
 
-        # ── 2. Don't run outside the event window. Reminders are an
-        #    event-scoped feature; we don't want @CONTEST_ROLE pings to
-        #    keep firing weeks after the event ends.
+        # ── 2. Get current time
         now = datetime.now(timezone.utc)
-        try:
-            start, end = get_event_window()
-        except Exception as e:
-            logger.error(f"reminder_loop: event_window unreadable: {e}")
-            return
-        if now < start or now >= end:
-            return
 
         # ── 3. Fetch upcoming contests, with failure-counted backoff.
         try:
