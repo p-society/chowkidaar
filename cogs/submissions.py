@@ -91,7 +91,7 @@ class SubmissionsCog(commands.Cog):
 
             # Contest detection: poll LC + CF for any new contests this user
             # attended inside the event window, record them, and award any
-            # contest-category badges (participant / top_100 / rating_climber).
+            # contest-category badges (participant / rating_climber).
             # The helper handles rate limiting, partial failures, and
             # idempotency internally and returns both the new contests and
             # any newly-awarded badge metadata.

@@ -92,7 +92,6 @@ SEED_BADGES = [
     ("day25_done", "Day 25 Done", "Completed the full 25-day challenge",        "milestone"),
     # contest
     ("contest_participant", "Contest Participant", "Attended at least one LC or CF contest during the event", "contest"),
-    ("contest_top_100",     "Top 100",             "Finished in the top 100 of any LC or CF contest",         "contest"),
     ("contest_rating_climber", "Rating Climber",   "Gained rating in at least one LC or CF contest",          "contest"),
 ]
 

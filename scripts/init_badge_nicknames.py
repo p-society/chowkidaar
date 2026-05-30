@@ -36,7 +36,6 @@ BADGE_DISPLAY = [
     ("day14_done",             "🥈", 20),
     ("day25_done",             "🥇", 30),
     ("contest_participant",    "🎯", 15),
-    ("contest_top_100",        "🌟", 25),
     ("contest_rating_climber", "📈", 18),
 ]
 

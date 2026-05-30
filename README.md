@@ -82,7 +82,6 @@ Manages event durations, branding titles, and Discord Role mappings for earned b
     "day14_done": 123456789012345678,
     "day25_done": 123456789012345678,
     "contest_participant": 123456789012345678,
-    "contest_top_100": 123456789012345678,
     "contest_rating_climber": 123456789012345678
   }
 }

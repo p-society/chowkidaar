@@ -271,9 +271,6 @@ def _record_contests_db_tx(
 
         badge_qualifiers = {
             "contest_participant": len(all_contests) > 0,
-            "contest_top_100": any(
-                (rank is not None and rank <= 100) for rank, _ in all_contests
-            ),
             "contest_rating_climber": any(
                 (delta is not None and delta > 0) for _, delta in all_contests
             ),
@@ -327,7 +324,6 @@ async def record_user_contests(
 
     Badges awarded here (all idempotent via UNIQUE on user_badges):
       - contest_participant:     any new contest recorded this call.
-      - contest_top_100:         any newly-recorded contest with rank <= 100.
       - contest_rating_climber:  any newly-recorded contest with rating_delta > 0.
     """
     lc_handle, cf_handle = _get_user_handles(discord_user_id)
