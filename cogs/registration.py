@@ -62,6 +62,65 @@ def _fetch_profile_data_tx(discord_user_id: int, start_utc, end_utc):
         conn.close()
 
 
+class ProfileCardView(discord.ui.View):
+    def __init__(self, target: discord.Member | discord.User, profile: dict, day_progress: int, streak: int, badge_rows: list, badge_emojis: list):
+        super().__init__(timeout=None)
+        self.target = target
+        self.profile = profile
+        self.day_progress = day_progress
+        self.streak = streak
+        self.badge_rows = badge_rows
+        self.badge_emojis = badge_emojis
+
+    @discord.ui.button(label="Generate Profile Card", style=discord.ButtonStyle.primary, emoji="🖼️")
+    async def generate_card(self, interaction: discord.Interaction, button: discord.ui.Button):
+        button.disabled = True
+        await interaction.response.edit_message(view=self)
+        
+        avatar_bytes: bytes | None = None
+        try:
+            asset = self.target.display_avatar.with_size(512).with_format("webp")
+            avatar_bytes = await asset.read()
+        except Exception as e:
+            logger.error(f"Failed to download avatar for {self.target.id}: {e}")
+
+        data = CardData(
+            name=self.profile["name"],
+            student_id=self.profile["stu_id"],
+            day_progress=self.day_progress,
+            streak=self.streak,
+            total_solved=self.profile["total_solved"],
+            badge_emojis=self.badge_emojis,
+            badge_keys=[b["key"] for b in self.badge_rows],
+            avatar_webp_bytes=avatar_bytes,
+        )
+
+        try:
+            webp_bytes = await asyncio.to_thread(render_card, data)
+        except Exception as e:
+            logger.error(f"Card render failed for {self.target.id}: {e}")
+            await interaction.followup.send(
+                f"❌ Card render failed: {e}", ephemeral=True
+            )
+            return
+
+        filename = f"chowkidaar_card_{self.profile['stu_id']}.webp"
+        file = discord.File(io.BytesIO(webp_bytes), filename=filename)
+        
+        embed = discord.Embed(
+            title="Here's your profile card",
+            color=discord.Color.teal()
+        )
+        embed.set_image(url=f"attachment://{filename}")
+        embed.set_footer(text="Show off your DoP streak by downloading \nthe image and sharing it on Instagram or X")
+        
+        await interaction.followup.send(
+            content=self.target.mention,
+            embed=embed,
+            file=file
+        )
+
+
 class RegistrationCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -161,47 +220,22 @@ class RegistrationCog(commands.Cog):
                 badge_text += f"{emoji_prefix}**{b['name']}**: {b['description']} *(awarded {awarded})*\n\n"
             embed.add_field(name="🏆 Badges", value=badge_text, inline=False)
 
-        avatar_bytes: bytes | None = None
-        try:
-            asset = target.display_avatar.with_size(512).with_format("webp")
-            avatar_bytes = await asset.read()
-        except Exception as e:
-            logger.error(f"Failed to download avatar for {target.id}: {e}")
-
-        data = CardData(
-            name=profile["name"],
-            student_id=profile["stu_id"],
+        view = ProfileCardView(
+            target=target,
+            profile=profile,
             day_progress=day_progress,
             streak=streak,
-            total_solved=total_solved,
-            badge_emojis=badge_emojis,
-            badge_keys=[b["key"] for b in badge_rows],
-            avatar_webp_bytes=avatar_bytes,
+            badge_rows=badge_rows,
+            badge_emojis=badge_emojis
         )
 
-        try:
-            webp_bytes = await asyncio.to_thread(render_card, data)
-        except Exception as e:
-            logger.error(f"Card render failed for {target.id}: {e}")
-            await interaction.followup.send(
-                f"❌ Card render failed: {e}", ephemeral=True
-            )
-            return
-
-        # Image attachment handling
-        filename = f"chowkidaar_card_{profile['stu_id']}.webp"
-        file = discord.File(io.BytesIO(webp_bytes), filename=filename)
-        embed.set_image(url=f"attachment://{filename}")
-
-        # 2. Attach the sharing text directly into the Footer slot
-        # Note: Text formatting characters like * or ** are omitted since footers display plain text
-        footer_text = "Feel free to share your profile card on Instagram or Twitter/X!\n(Long press / Right click the image to save)"
+        footer_text = "Click the button below to generate your profile card image."
         embed.set_footer(text=footer_text)
 
         # Fire message response
         await interaction.followup.send(
             embed=embed,
-            file=file,
+            view=view,
         )
 
 async def setup(bot: commands.Bot):
