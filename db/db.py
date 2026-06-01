@@ -327,10 +327,9 @@ def delete_cp_log(student_id, day):
             user_row = cur.fetchone()
             if user_row and user_row[0]:
                 discord_user_id = user_row[0]
-                cur.execute("SELECT initial_time, final_time FROM day_brackets WHERE day = %s;", (str(day),))
-                bracket = cur.fetchone()
+                bracket = get_bracket_range_db(day)
                 if bracket:
-                    initial_time, final_time = bracket[0], bracket[1]
+                    initial_time, final_time = bracket
                     cur.execute(
                         """
                         UPDATE participation_logs
@@ -421,26 +420,17 @@ def register_user(
 
 
 def check_time_bracket(day, timestamp):
-    conn = connect_to_database(purpose="Check Time Bracket")
-    if not conn:
+    bracket = get_bracket_range_db(day)
+    if not bracket:
         return False
-    try:
-        with conn.cursor() as cur:
-            # Check if the timestamp is present in timebracket for the day.
-            cur.execute('''
-                SELECT *
-                FROM day_brackets 
-                WHERE day = %s
-                AND %s BETWEEN initial_time AND final_time;
-            ''', (str(day), timestamp)
-            )
-            result = cur.fetchone()
-            return result is not None
-    except Exception as e:
-        print("Error in check_time_bracket", e)
-        return False
-    finally:
-        conn.close()
+        
+    initial_time, final_time = bracket
+    
+    import datetime
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=datetime.timezone.utc)
+        
+    return initial_time <= timestamp <= final_time
 
 
 def flag_late(stu_id):
@@ -467,28 +457,31 @@ def flag_late(stu_id):
 
 def get_bracket_range_db(day):
     '''
-    Just returns INITIAL and FINAL time bracket values
+    Dynamically calculate the bracket range for a given day using event_config.json
+    so we don't have to populate a database table.
     '''
-    conn = connect_to_database(purpose="Fetch Time Bracket Range")
-    if not conn:
-        return None
     try:
-        with conn.cursor() as cur:
-            cur.execute('''
-                SELECT initial_time, final_time 
-                FROM day_brackets
-                WHERE day=%s
-            ''', (str(day),)
-            )
-            result = cur.fetchone()
-            if result:
-                return result[0], result[1]
+        from utils.event_window import _load_config
+        import datetime
+        
+        cfg = _load_config()
+        start_date_str = cfg.get("start_date")
+        if not start_date_str:
             return None
+            
+        start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        day_start_date = start_date + datetime.timedelta(days=int(day) - 1)
+        day_end_date = day_start_date + datetime.timedelta(days=1)
+        
+        # 10:00 PM IST is 16:30 UTC
+        # 12:00 PM (Noon) IST is 06:30 UTC
+        initial_time = datetime.datetime.combine(day_start_date, datetime.time(16, 30), tzinfo=datetime.timezone.utc)
+        final_time = datetime.datetime.combine(day_end_date, datetime.time(6, 30), tzinfo=datetime.timezone.utc)
+        
+        return initial_time, final_time
     except Exception as e:
-        print(f"Error in get_bracket_range_db: {e}")
+        print(f"Error calculating bracket range: {e}")
         return None
-    finally:
-        conn.close()
 
 
 def update_cp_log_by_day(student_id, day, message, updated_at):
@@ -506,11 +499,10 @@ def update_cp_log_by_day(student_id, day, message, updated_at):
             discord_user_id = user_row[0]
 
             # 2. Get day bracket times
-            cur.execute("SELECT initial_time, final_time FROM day_brackets WHERE day = %s;", (str(day),))
-            bracket = cur.fetchone()
+            bracket = get_bracket_range_db(day)
             if not bracket:
                 return False
-            initial_time, final_time = bracket[0], bracket[1]
+            initial_time, final_time = bracket
 
             # 3. Update the matching log
             cur.execute(
