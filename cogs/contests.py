@@ -30,22 +30,30 @@ _BACKOFF_TICKS = 6  # 6 ticks × 5 min = 30 min cooldown
 
 
 def _process_contest_reminders_tx(contests, now) -> list[tuple]:
+    # 1. Filter contests to only those matching a reminder window
+    candidates = []
+    for c in contests:
+        time_left = c.start_time - now
+        for label, target, half_window in _REMINDER_WINDOWS:
+            lower, upper = target - half_window, target + half_window
+            if lower <= time_left <= upper:
+                candidates.append((c, label))
+
+    # If no contests are happening soon, skip DB connection entirely!
+    if not candidates:
+        return []
+
     from db.db import connect_to_database
-    from db.contest_reminders import was_sent, mark_sent
+    from db.contest_reminders import mark_sent
     conn = connect_to_database(purpose="Contest Reminders Dedup")
     if not conn:
         return []
     
     to_send = []
     try:
-        for c in contests:
-            time_left = c.start_time - now
-            for label, target, half_window in _REMINDER_WINDOWS:
-                lower, upper = target - half_window, target + half_window
-                if not (lower <= time_left <= upper):
-                    continue
-                if mark_sent(c.url, label, conn=conn):
-                    to_send.append((c, label))
+        for c, label in candidates:
+            if mark_sent(c.url, label, conn=conn):
+                to_send.append((c, label))
         return to_send
     finally:
         conn.close()
