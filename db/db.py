@@ -49,14 +49,28 @@ def connect_to_database(purpose: str = None):
             return None
 
     if _db_pool:
-        try:
-            conn = _db_pool.getconn()
-            if purpose:
-                pass # print(f"🔌 Acquired pooled connection ({purpose})") # Reduced logging to prevent console spam
-            return PooledConnectionProxy(_db_pool, conn)
-        except Exception as e:
-            print(f"Failed to get connection from pool: {e}")
-            return None
+        # Retry up to 3 times to get a healthy connection
+        for _ in range(3):
+            conn = None
+            try:
+                conn = _db_pool.getconn()
+                # Ping the database to ensure the connection is alive
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1")
+                
+                # If ping succeeds, return wrapped connection
+                return PooledConnectionProxy(_db_pool, conn)
+                
+            except psycopg2.OperationalError:
+                # Connection is dead (likely dropped by Neon auto-suspend)
+                if conn is not None:
+                    # Discard the dead connection from the pool completely
+                    _db_pool.putconn(conn, close=True)
+            except Exception as e:
+                print(f"Failed to get connection from pool: {e}")
+                if conn is not None:
+                    _db_pool.putconn(conn, close=True)
+                return None
     return None
 
 def get_student_profile(discord_user_id):
