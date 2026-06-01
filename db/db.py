@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import pool
 import pytz
 import datetime
 from prometheus_client import Counter
@@ -11,23 +12,52 @@ DB_URL = os.getenv("NEON_DB_URL")
 
 total_db_operations = Counter('total_db_operations', 'Count of total database ops occured')
 
-def connect_to_database(purpose: str = None):
-    """Central database connection function that tries both connection methods"""
-    try:
-        if DB_URL:
-            try:
-                conn = psycopg2.connect(DB_URL)
-                if purpose:
-                    print(f"🔌 Connected to Neon DB ({purpose})")
-                else:
-                    print("✅ Connected to Neon DB successfully.")
-                return conn
-            except Exception as e:
-                print(f"Failed to connect to Neon DB: {e}")
+_db_pool = None
 
-    except psycopg2.Error as e:
-        print(f"Error connecting to the database: {e}")
+class PooledConnectionProxy:
+    def __init__(self, pool, conn):
+        self._pool = pool
+        self._conn = conn
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def close(self):
+        if self._conn is not None:
+            self._pool.putconn(self._conn)
+            self._conn = None
+
+    def __enter__(self):
+        self._conn.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self._conn.__exit__(exc_type, exc_val, exc_tb)
+
+def connect_to_database(purpose: str = None):
+    """Central database connection function that uses a connection pool"""
+    global _db_pool
+    if not DB_URL:
         return None
+
+    if _db_pool is None:
+        try:
+            # Min 1, Max 20 connections
+            _db_pool = psycopg2.pool.ThreadedConnectionPool(1, 20, DB_URL)
+        except Exception as e:
+            print(f"Failed to initialize connection pool: {e}")
+            return None
+
+    if _db_pool:
+        try:
+            conn = _db_pool.getconn()
+            if purpose:
+                pass # print(f"🔌 Acquired pooled connection ({purpose})") # Reduced logging to prevent console spam
+            return PooledConnectionProxy(_db_pool, conn)
+        except Exception as e:
+            print(f"Failed to get connection from pool: {e}")
+            return None
+    return None
 
 def get_student_profile(discord_user_id):
     """Return (stu_id, name, total_solved) for the given Discord user, or None.
@@ -388,7 +418,7 @@ def check_time_bracket(day, timestamp):
                 FROM day_brackets 
                 WHERE day = %s
                 AND %s BETWEEN initial_time AND final_time;
-            ''', (day, timestamp)
+            ''', (str(day), timestamp)
             )
             result = cur.fetchone()
             return result is not None

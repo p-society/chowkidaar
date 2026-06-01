@@ -69,6 +69,24 @@ class RegistrationCog(commands.Cog):
     @app_commands.command(name="register", description="Register your CP handles")
     @is_watched_channel()
     async def register(self, interaction: discord.Interaction, student_id: str, name: str, leetcode_handle: str, codeforces_handle: str):
+        # Await defer first since API calls + DB insertion might take a few seconds
+        await interaction.response.defer()
+
+        # Validate LeetCode Handle
+        from db.platforms.leetcode import get_leetcode_recent_submissions
+        from db.platforms.codeforces import get_codeforces_recent_submissions
+
+        lc_check = await asyncio.to_thread(get_leetcode_recent_submissions, leetcode_handle)
+        if isinstance(lc_check, dict) and "error" in lc_check:
+            await interaction.followup.send(f"❌ **LeetCode Error**: {lc_check.get('message', 'Profile not found or is private.')}")
+            return
+
+        # Validate CodeForces Handle
+        cf_check = await asyncio.to_thread(get_codeforces_recent_submissions, codeforces_handle, 1)
+        if isinstance(cf_check, dict) and "error" in cf_check:
+            await interaction.followup.send(f"❌ **CodeForces Error**: {cf_check.get('message', 'Profile not found or is private.')}")
+            return
+
         # Capture the caller's Discord ID so we can link stu_id <-> discord later
         # (used for badges, contest points, etc.).
         success = await asyncio.to_thread(
@@ -87,7 +105,7 @@ class RegistrationCog(commands.Cog):
         else:
             embed.description = "❌ Failed to register user. Please try again or contact an admin."
             
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="profile", description="View your progress, badges, and generate a shareable card")
     @is_watched_channel()

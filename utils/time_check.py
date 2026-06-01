@@ -24,25 +24,29 @@ def is_in_time_bracket(day, msg_timestamp):
 
 def is_unique_in_time_bracket(discord_user_id, msg_timestamp, day):
     conn = connect_to_database()
-    cur = conn.cursor()
+    if not conn:
+        return True
+    try:
+        cur = conn.cursor()
 
-    bracket_start, bracket_end = get_bracket_range(msg_timestamp, day)
+        bracket_start, bracket_end = get_bracket_range(msg_timestamp, day)
 
-    cur.execute(
-        """
-        SELECT COUNT(*)
-        FROM participation_logs
-        WHERE discord_user_id = '%s'
-        AND sent_at >= %s
-        AND sent_at < %s
-        AND deleted_at IS NULL
-    """,
-        (discord_user_id, str(bracket_start), str(bracket_end)),
-    )
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM participation_logs
+            WHERE discord_user_id = '%s'
+            AND sent_at >= %s
+            AND sent_at < %s
+            AND deleted_at IS NULL
+        """,
+            (discord_user_id, str(bracket_start), str(bracket_end)),
+        )
 
-    result = cur.fetchone()
-    cur.close()
-    conn.close()
+        result = cur.fetchone()
+        cur.close()
+    finally:
+        conn.close()
 
 
     if result[0] > 0:

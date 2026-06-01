@@ -46,15 +46,24 @@ def get_leetcode_data(username):
             headers=HEADERS
         )
         response.raise_for_status()
-        data = response.json().get("data")
+        resp_json = response.json()
+        
+        if "errors" in resp_json:
+            err_msg = resp_json["errors"][0].get("message", "Unknown GraphQL error")
+            if "does not exist" in err_msg.lower():
+                return {"error": "User Not Found", "message": f"LeetCode profile '{username}' does not exist or is private."}
+            return {"error": "GraphQL Error", "message": err_msg}
 
+        data = resp_json.get("data")
         if not data:
-            print("No data returned (possible profile privacy settings).")
-            return
+            return {"error": "No Data", "message": f"No data returned for '{username}'. Profile may be private."}
 
-        matched_user = data.get("matchedUser", {})
-        submissions = data.get("recentAcSubmissionList", [])
-        contest = data.get("userContestRanking", {})
+        matched_user = data.get("matchedUser")
+        if matched_user is None:
+            return {"error": "User Not Found", "message": f"LeetCode profile '{username}' does not exist or is private."}
+
+        submissions = data.get("recentAcSubmissionList") or []
+        contest = data.get("userContestRanking") or {}
 
         result = {
             "username": username,
@@ -99,12 +108,22 @@ def get_leetcode_recent_submissions(username):
             headers=HEADERS
         )
         response.raise_for_status()
-        data = response.json().get("data", {})
-        submissions = data.get("recentAcSubmissionList", [])
+        resp_json = response.json()
+        
+        if "errors" in resp_json:
+            err_msg = resp_json["errors"][0].get("message", "Unknown GraphQL error")
+            if "does not exist" in err_msg.lower():
+                return {"error": "User Not Found", "message": f"LeetCode profile '{username}' does not exist or is private."}
+            return {"error": "GraphQL Error", "message": err_msg}
 
-        if not submissions:
-            print("No recent accepted submissions found or profile is private.")
-            return []
+        data = resp_json.get("data", {})
+        if data is None:
+            return {"error": "Private Profile", "message": f"LeetCode profile '{username}' might be private."}
+            
+        submissions = data.get("recentAcSubmissionList")
+
+        if submissions is None:
+            return {"error": "Private Profile", "message": f"LeetCode profile '{username}' might be private."}
 
         return submissions
 
