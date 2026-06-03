@@ -11,7 +11,7 @@
 
 <h3>
   <a href="https://dev-psoc.netlify.app/">Website</a> · 
-  <a href="https://discord.gg/5Tj7DEED">Community Discord</a> · 
+  <a href="https://discord.gg/SdHhfNYDbx">Community Discord</a> · 
   <a href="https://github.com/p-society/chowkidaar/projects?type=classic">Contribute</a>
 </h3>
 
