@@ -21,12 +21,11 @@
 
 ## ✨ Features
 
-*   🚀 **Modern Slash Commands**: Fully migrated to Discord's latest Application Commands architecture with instant guild synchronization.
-*   📊 **Daily Submissions (`/submit`)**: Student activity logger with automatic streak tracking, custom time brackets, and validation guards.
-*   🏆 **Milestone & Badge System**: Automatic badge rewards (e.g. Day 7, Day 14, Day 25) with dynamic Discord Role allocation.
-*   🎨 **Premium Profile Cards**: Offline-renderable cyber-themed PNG cards showing student streaks, problems solved, progress bar, and high-resolution earned medals.
-*   ⏰ **Contest Reminders**: Idempotent polling loop fetching LeetCode, Codeforces, and CodeChef contest updates with automatic role pings 12 hours, 15 minutes, and 0 minutes before start.
-*   📈 **Real-Time Metrics**: Integrated Prometheus metrics server exporting event monitoring state on port `8000`.
+*   🚀 **Slash Commands**: Uses Discord's Application Commands for interactions (`/submit`, `/profile`, `/status`, `/upcoming`, `/register`).
+*   📊 **Daily Submissions & Progress Logging**: Student activity logger with automatic streak tracking and custom time brackets.
+*   🏆 **Milestone & Badge System**: Automatic badge rewards (e.g. Day 7, Day 14, Day 25) with Discord Role allocation.
+*   🎨 **Profile Cards**: Generated PNG cards showing student streaks, problems solved, progress bar, and earned medals.
+*   ⏰ **Contest Reminders**: Sends reminders 12 hours and 15 minutes before Codeforces, LeetCode, and CodeChef contests.
 
 ---
 
@@ -49,6 +48,7 @@ chowkidaar/
 ├── utils/                      # Core Utility Libraries
 │   ├── card_generator.py       # Premium Profile Card canvas builder
 │   ├── permissions.py          # Channel-specific execution guards
+│   ├── event_window.py         # Logical event day calculation bounds
 │   └── metrics.py              # Prometheus metric exporters
 └── configs/                    # Static Configuration Files (Single Source of Truth)
     ├── event_config.json       # Start dates, duration, badge roles, branding templates
@@ -66,8 +66,8 @@ All user-customizable parameters are maintained in **JSON config files** under `
 Manages event durations, branding titles, and Discord Role mappings for earned badges:
 ```json
 {
-  "start_date": "2026-05-19",
-  "bot_admins": [803101677460520990],
+  "start_date": "2026-06-01",
+  "bot_admins": [1336348458671673354],
   "branding": {
     "title": "25 Days of Productivity",
     "subtitle": "by The Programming Society · IIIT-BH"
@@ -75,23 +75,13 @@ Manages event durations, branding titles, and Discord Role mappings for earned b
   "cp": {
     "duration_days": 25,
     "announcement_intro": "**Day {day} Coding Challenge** 🚀\n\n",
-    "announcement_outro": "\n⏰ **Log your progress using `/submit` before Noon!**"
-  },
-  "badge_roles": {
-    "day7_done": 123456789012345678,
-    "day14_done": 123456789012345678,
-    "day25_done": 123456789012345678,
-    "contest_participant": 123456789012345678,
-    "contest_rating_climber": 123456789012345678
+    "announcement_outro": "\n⏰ **Log your progress using `/submit` between 10:00 PM and 12:00 PM (Noon) IST!**"
   }
 }
 ```
 
 ### 2. Environment Variables (`.env.local`)
 Create `.env.local` based on `.env.example` to store credentials. 
-
-> [!NOTE]
-> Bot slash commands are enabled **server-wide** (across all channels). However, automated daily challenges and contest reminders are routed to specific channels to prevent spam.
 
 ```ini
 DISCORD_TOKEN=your_bot_token_here
@@ -100,7 +90,7 @@ NEON_DB_URL=postgresql://user:password@localhost:5433/db
 # Channel for Daily Challenge announcements & Dev learning resources
 WATCHED_CHANNEL_ID=123456789012345678
 
-# Channel for Competitive Programming contest reminders (12h, 15m, 0m before start)
+# Channel for Competitive Programming contest reminders
 CONTEST_REMINDER_CHANNEL_ID=123456789012345678
 
 # Discord Role ID to mention/tag during contest reminders
@@ -136,11 +126,9 @@ sudo docker compose up -d
 ```
 
 ### 3. Initialize Schema & Migrations
-Allow ~10 seconds for PostgreSQL to boot up fully, then run the database setup scripts:
+Allow ~10 seconds for PostgreSQL to boot up fully, then run the unified database setup script. This single script safely provisions all tables, indexes, extensions, and seeds the badges:
 ```bash
 uv run --python 3.12 scripts/init_db.py
-uv run --python 3.12 scripts/init_badges_contests.py
-uv run --python 3.12 scripts/init_badge_nicknames.py
 ```
 
 ### 4. Run the Bot!
@@ -156,36 +144,7 @@ You can generate and preview sample profile cards covering different milestone l
 ```bash
 uv run --python 3.12 scripts/test_card.py
 ```
-This renders 5 sample cards inside `outputs/`:
-*   `outputs/card_no_badges.png` (Default state)
-*   `outputs/card_early.png` (Intro progress)
-*   `outputs/card_mid.png` (Bronze Medal unlocked)
-*   `outputs/card_late.png` (Bronze + Silver Medals unlocked)
-*   `outputs/card_done.png` (Bronze + Silver + Gold Medals unlocked)
-
----
-
-## 📖 Developer Guide: Adding a Badge
-
-To create a new event badge:
-1.  **Add Assets**: Save a transparent square PNG image (e.g. `day30_done.png`) in `assets/badges/`.
-2.  **Declare Badge**: Append the badge properties to the `BADGES_CATALOG` list in `db/badges_config.py`:
-    ```python
-    {
-        "key": "day30_done",
-        "name": "Day 30 Champion",
-        "description": "Completed the extended 30-day coding marathon",
-        "category": "milestone",
-        "emoji": "👑",
-        "display_priority": 40,
-        "threshold": 30,
-    }
-    ```
-3.  **Map Discord Role**: Open `configs/event_config.json` and add the role mapping under `"badge_roles"`:
-    ```json
-    "day30_done": 123456789012345678
-    ```
-On the next bot startup, the catalog is fully auto-synced into your database!
+This renders 5 sample cards inside `outputs/`.
 
 ---
 
@@ -194,4 +153,3 @@ On the next bot startup, the catalog is fully auto-synced into your database!
 <a href="https://github.com/p-society/chowkidaar/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=p-society/chowkidaar" />
 </a>
-
