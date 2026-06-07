@@ -103,6 +103,8 @@ class BadgesCog(commands.Cog):
                     member = guild.get_member(uid)
                     if member is None:
                         try:
+                            # Small delay to prevent rapid API calls causing rate limit warnings on startup
+                            await asyncio.sleep(0.2)
                             member = await guild.fetch_member(uid)
                         except discord.NotFound:
                             continue
@@ -205,6 +207,8 @@ class BadgesCog(commands.Cog):
             member = interaction.guild.get_member(uid)
             if member is None:
                 try:
+                    # Small delay to prevent hitting Discord rate limits on batch sync
+                    await asyncio.sleep(0.2)
                     member = await interaction.guild.fetch_member(uid)
                 except discord.NotFound:
                     members_not_in_guild += 1
