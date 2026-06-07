@@ -55,7 +55,11 @@ def _batch_award_milestones_tx(user_ids: set[int]):
                 user_all_badges[uid] = list_user_badges(uid, conn=conn)
             except Exception as e:
                 logger.error(f"batch milestone award error for {uid}: {e}")
+        conn.commit()
         return user_newly_badges, user_all_badges
+    except Exception as e:
+        conn.rollback()
+        raise e
     finally:
         conn.close()
 

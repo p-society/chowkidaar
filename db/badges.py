@@ -396,7 +396,13 @@ def check_and_award_milestones(discord_user_id: int, conn=None) -> List[dict]:
             meta = award_badge(discord_user_id, badge_key, conn=conn)
             if meta is not None:
                 newly_awarded.append(meta)
+        if should_close:
+            conn.commit()
         return newly_awarded
+    except Exception as e:
+        if should_close:
+            conn.rollback()
+        raise e
     finally:
         if should_close:
             conn.close()
