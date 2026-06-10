@@ -62,8 +62,16 @@ async def test_queue_flow():
     else:
         print("❌ has_pending_entry failed to find the queued item.")
 
-    # 4. Fetch Pending Jobs
+    # 4. Fetch Pending Jobs (Force next_retry_at to past for testing)
     print("\n4️⃣ Testing Fetch Pending Jobs...")
+    from db.db import connect_to_database
+    conn = connect_to_database()
+    if conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE submission_queue SET next_retry_at = NOW() - INTERVAL '1 hour' WHERE user_id = %s", (test_user_id,))
+        conn.commit()
+        conn.close()
+
     jobs = get_pending_jobs()
     test_job = next((j for j in jobs if j["user_id"] == test_user_id and j["day"] == test_day), None)
     
@@ -83,11 +91,41 @@ async def test_queue_flow():
             print("✅ mark_processed worked! Job is no longer pending.")
         else:
             print("❌ mark_processed failed: Job is still pending.")
-            
+
     else:
         print("❌ Could not find test job in pending jobs. (Is next_retry_at in the future?)")
-        
-    print("\n🎉 Tests completed. Please run scripts/init_db.py first if any tests failed.")
+
+    # 7. Test 12-hour Expiration (mark_failed)
+    print("\n7️⃣ Testing 12-Hour Expiration (mark_failed)...")
+    
+    # Enqueue a new temp job for failure testing
+    enqueue_submission(
+        user_id="FAIL_TEST_001",
+        discord_user_id=123,
+        day=99,
+        description="Will fail",
+        submitted_at=datetime.now(timezone.utc),
+        failed_platform="leetcode"
+    )
+    
+    # Force its retry time to the past and fetch it
+    conn = connect_to_database()
+    if conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE submission_queue SET next_retry_at = NOW() - INTERVAL '1 hour' WHERE user_id = 'FAIL_TEST_001'")
+            cur.execute("SELECT id FROM submission_queue WHERE user_id = 'FAIL_TEST_001' AND status = 'pending'")
+            fail_job_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+
+    mark_failed(fail_job_id, "Max retries exhausted (12 hours passed)")
+    still_pending = has_pending_entry("FAIL_TEST_001", 99)
+    if not still_pending:
+        print("✅ mark_failed worked! Dead-lettered job is correctly removed from pending queue.")
+    else:
+        print("❌ mark_failed failed: Job is still pending.")
+            
+    print("\n🎉 Tests completed.")
 
 if __name__ == "__main__":
     asyncio.run(test_queue_flow())

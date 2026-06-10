@@ -82,10 +82,8 @@ class SubmissionsCog(commands.Cog):
             embed = discord.Embed(
                 title=f"📬 Day {day} Submission Queued",
                 description=(
-                    f"⚠️ **{cp_result['failed_platform'].title()}** API is currently unreachable.\n\n"
-                    "Your submission has been **securely queued** and will be retried "
-                    "automatically every **2 hours** (up to 6 times over 12 hours).\n\n"
-                    "A confirmation will be posted in this channel once verified. ✅"
+                    "Your submission is recorded but the server is currently down.\n"
+                    "It will be verified automatically once the server is up. Thank you!"
                 ),
                 color=discord.Color.yellow(),
             )
