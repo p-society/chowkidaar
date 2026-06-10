@@ -235,6 +235,16 @@ def _circular_avatar(raw_bytes: bytes, size: int) -> Image.Image:
     return out
 
 
+def _make_circular_badge(img: Image.Image, size: int) -> Image.Image:
+    """Resize image to (size, size) and apply a circular alpha mask to crop it perfectly."""
+    resized = img.convert("RGBA").resize((size, size), Image.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, size, size), fill=255)
+    out = Image.new("RGBA", (size, size))
+    out.paste(resized, (0, 0), mask)
+    return out
+
+
 def _placeholder_avatar(size: int, initial: str, fill=ACCENT_TEAL) -> Image.Image:
     """When no avatar is provided, draw a teal circle with the user's initial."""
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
@@ -306,20 +316,20 @@ def _get_base_background(branding, bg_navy, accent_color) -> Image.Image:
 
     # ── Poster heading (y ≈ 80–200) ──
     # Letter-spaced uppercase title in accent, smaller subtitle below in muted.
-    title_font = _font_bold(52)
-    subtitle_font = _font_regular(30)
+    title_font = _font_bold(38)
+    subtitle_font = _font_regular(28)
     title = branding["title"].upper()
     # Manual letter spacing for the title — draw each char individually so the
     # uppercase reads as a "poster" header without a custom font.
     title_chars = list(title)
-    char_gap = 6
+    char_gap = 4
     char_widths = [_text_width(draw, c, title_font) for c in title_chars]
     total_title_w = sum(char_widths) + char_gap * (len(title_chars) - 1)
     x = (WIDTH - total_title_w) // 2
     for c, cw in zip(title_chars, char_widths):
         draw.text((x, 80), c, font=title_font, fill=accent_color)
         x += cw + char_gap
-    _center_text(draw, 150, branding["subtitle"], subtitle_font, MUTED_GRAY)
+    _center_text(draw, 142, branding["subtitle"], subtitle_font, MUTED_GRAY)
 
     # Thin accent divider under the heading
     draw.line([(WIDTH // 2 - 80, 208), (WIDTH // 2 + 80, 208)], fill=accent_color, width=3)
@@ -360,11 +370,24 @@ def render_card(data: CardData) -> bytes:
         )
     img.paste(avatar, ((WIDTH - AV_SIZE) // 2, 240), avatar)
 
-    name_font = _font_bold(70)
-    _center_text(draw, 565, data.name, name_font, TEXT_WHITE)
+    name_font_size = 70
+    name_font = _font_bold(name_font_size)
+    name_w = _text_width(draw, data.name, name_font)
+    max_name_w = 880  # 100px padding on each side
+    while name_w > max_name_w and name_font_size > 36:
+        name_font_size -= 4
+        name_font = _font_bold(name_font_size)
+        name_w = _text_width(draw, data.name, name_font)
+    _center_text(draw, 565 + (70 - name_font_size) // 2, data.name, name_font, TEXT_WHITE)
 
-    sid_font = _font_regular(34)
-    _center_text(draw, 650, data.student_id, sid_font, accent_color)
+    sid_font_size = 34
+    sid_font = _font_regular(sid_font_size)
+    sid_w = _text_width(draw, data.student_id, sid_font)
+    while sid_w > max_name_w and sid_font_size > 20:
+        sid_font_size -= 2
+        sid_font = _font_regular(sid_font_size)
+        sid_w = _text_width(draw, data.student_id, sid_font)
+    _center_text(draw, 650 + (34 - sid_font_size) // 2, data.student_id, sid_font, accent_color)
 
     # ── Big number: DAY X / 25 (y ≈ 720–1010) ──
     big_font = _font_bold(260)
@@ -516,7 +539,8 @@ def render_card(data: CardData) -> bytes:
                 badge_imgs.append(_cached_badges[img_path])
             elif os.path.exists(img_path):
                 try:
-                    b_img = Image.open(img_path).convert("RGBA").resize((EMOJI_SIZE, EMOJI_SIZE), Image.LANCZOS)
+                    b_img = Image.open(img_path)
+                    b_img = _make_circular_badge(b_img, EMOJI_SIZE)
                     _cached_badges[img_path] = b_img
                     badge_imgs.append(b_img)
                 except Exception as e:

@@ -190,7 +190,6 @@ async def test_db_upsert_and_badges():
              
              print(f"Badges awarded: {badge_keys}")
              assert "contest_participant" in badge_keys, "Expected contest_participant badge"
-             assert "contest_top_100" in badge_keys, "Expected contest_top_100 badge (rank 80)"
              assert "contest_rating_climber" in badge_keys, "Expected contest_rating_climber badge (delta +40)"
              
              print("✅ Database upserts and badge awarding fixes verified successfully!")

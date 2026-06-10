@@ -9,7 +9,6 @@ from config import CONTEST_ROLE_ID, CONTEST_REMINDER_CHANNEL_ID
 from integrations.upcoming_contests import fetch_all_upcoming_contests
 from db.contest_reminders import mark_sent, was_sent
 from utils.permissions import is_watched_channel
-from utils.event_window import get_event_window
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,6 @@ logger = logging.getLogger(__name__)
 _REMINDER_WINDOWS = [
     ("12h", timedelta(hours=12),  timedelta(minutes=30)),
     ("15m", timedelta(minutes=15), timedelta(minutes=5)),
-    ("0m",  timedelta(minutes=0),  timedelta(minutes=5)),
 ]
 
 # After this many consecutive clist.by failures, throttle the reminder loop.
@@ -32,22 +30,30 @@ _BACKOFF_TICKS = 6  # 6 ticks × 5 min = 30 min cooldown
 
 
 def _process_contest_reminders_tx(contests, now) -> list[tuple]:
+    # 1. Filter contests to only those matching a reminder window
+    candidates = []
+    for c in contests:
+        time_left = c.start_time - now
+        for label, target, half_window in _REMINDER_WINDOWS:
+            lower, upper = target - half_window, target + half_window
+            if lower <= time_left <= upper:
+                candidates.append((c, label))
+
+    # If no contests are happening soon, skip DB connection entirely!
+    if not candidates:
+        return []
+
     from db.db import connect_to_database
-    from db.contest_reminders import was_sent, mark_sent
+    from db.contest_reminders import mark_sent
     conn = connect_to_database(purpose="Contest Reminders Dedup")
     if not conn:
         return []
     
     to_send = []
     try:
-        for c in contests:
-            time_left = c.start_time - now
-            for label, target, half_window in _REMINDER_WINDOWS:
-                lower, upper = target - half_window, target + half_window
-                if not (lower <= time_left <= upper):
-                    continue
-                if mark_sent(c.url, label, conn=conn):
-                    to_send.append((c, label))
+        for c, label in candidates:
+            if mark_sent(c.url, label, conn=conn):
+                to_send.append((c, label))
         return to_send
     finally:
         conn.close()
@@ -61,6 +67,7 @@ class ContestsCog(commands.Cog):
         # the counters below just keep us off clist.by's back during outages.
         self._consecutive_failures = 0
         self._ticks_to_skip = 0
+        self._sent_reminders = set()
         self.reminder_loop.start()
 
     def cog_unload(self):
@@ -116,17 +123,8 @@ class ContestsCog(commands.Cog):
             self._ticks_to_skip -= 1
             return
 
-        # ── 2. Don't run outside the event window. Reminders are an
-        #    event-scoped feature; we don't want @CONTEST_ROLE pings to
-        #    keep firing weeks after the event ends.
+        # ── 2. Get current time
         now = datetime.now(timezone.utc)
-        try:
-            start, end = get_event_window()
-        except Exception as e:
-            logger.error(f"reminder_loop: event_window unreadable: {e}")
-            return
-        if now < start or now >= end:
-            return
 
         # ── 3. Fetch upcoming contests, with failure-counted backoff.
         try:
@@ -158,9 +156,13 @@ class ContestsCog(commands.Cog):
         reminders_to_send = await asyncio.to_thread(_process_contest_reminders_tx, contests, now)
 
         for c, label in reminders_to_send:
+            if (c.url, label) in self._sent_reminders:
+                continue
+                
             title, mention_role = _reminder_copy(label)
             try:
                 await self.send_reminder(channel, c, title, mention_role=mention_role)
+                self._sent_reminders.add((c.url, label))
             except Exception as e:
                 logger.error(f"reminder send failed for {c.url} [{label}]: {e}")
 
@@ -198,9 +200,8 @@ def _reminder_copy(label: str) -> tuple[str, bool]:
         return ("🔔 Contest in 12 Hours! Register now!", True)
     if label == "15m":
         return ("🚨 Contest starting in 15 Minutes!", True)
-    # 0m or anything else: no @role ping; the previous notifications already
-    # nudged everyone, this is just a "live now" marker.
-    return ("🚀 Contest has Started!", False)
+    # Fallback for anything else (should not be reached based on _REMINDER_WINDOWS)
+    return ("🚀 Upcoming Contest!", False)
 
 
 async def setup(bot: commands.Bot):

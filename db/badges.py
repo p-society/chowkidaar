@@ -165,7 +165,7 @@ def count_distinct_submission_days(
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT COUNT(DISTINCT DATE(sent_at AT TIME ZONE 'UTC'))
+                SELECT COUNT(DISTINCT DATE((sent_at AT TIME ZONE 'UTC') - INTERVAL '16 hours 30 minutes'))
                 FROM participation_logs
                 WHERE discord_user_id = %s
                   AND deleted_at IS NULL
@@ -271,7 +271,7 @@ def current_streak(discord_user_id: int, conn=None) -> int:
             start_utc, end_utc = get_event_window()
             cur.execute(
                 """
-                SELECT DISTINCT DATE(sent_at AT TIME ZONE 'UTC') AS d
+                SELECT DISTINCT DATE((sent_at AT TIME ZONE 'UTC') - INTERVAL '16 hours 30 minutes') AS d
                 FROM participation_logs
                 WHERE discord_user_id = %s
                   AND deleted_at IS NULL
@@ -294,7 +294,8 @@ def current_streak(discord_user_id: int, conn=None) -> int:
         return 0
 
     from datetime import datetime, timezone, timedelta
-    today = datetime.now(timezone.utc).date()
+    now_shifted = datetime.now(timezone.utc) - timedelta(hours=16, minutes=30)
+    today = now_shifted.date()
     # If today isn't in the set, allow yesterday as the anchor so missing today
     # doesn't pre-emptively break the streak.
     cursor = today if today in dates else today - timedelta(days=1)
@@ -333,7 +334,7 @@ def max_streak(discord_user_id: int, conn=None) -> int:
             start_utc, end_utc = get_event_window()
             cur.execute(
                 """
-                SELECT DISTINCT DATE(sent_at AT TIME ZONE 'UTC') AS d
+                SELECT DISTINCT DATE((sent_at AT TIME ZONE 'UTC') - INTERVAL '16 hours 30 minutes') AS d
                 FROM participation_logs
                 WHERE discord_user_id = %s
                   AND deleted_at IS NULL
@@ -395,7 +396,13 @@ def check_and_award_milestones(discord_user_id: int, conn=None) -> List[dict]:
             meta = award_badge(discord_user_id, badge_key, conn=conn)
             if meta is not None:
                 newly_awarded.append(meta)
+        if should_close:
+            conn.commit()
         return newly_awarded
+    except Exception as e:
+        if should_close:
+            conn.rollback()
+        raise e
     finally:
         if should_close:
             conn.close()

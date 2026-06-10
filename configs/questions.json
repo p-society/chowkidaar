@@ -2,7 +2,7 @@
     "1": ["LC-valid-anagram", "LC-kids-with-the-greatest-number-of-candies"], 
     "2": ["LC-merge-strings-alternately", "LC-can-place-flowers"],
     "3": ["LC-flipping-an-image", "LC-move-zeroes"],
-    "4": ["LC-longest-common-prefix", "LC-license-key-formatting"],
+    "4": ["LC-longest-common-prefix", "LC-license-key-formatting", "LC-max-number-of-k-sum-pairs"],
     "5": ["LC-is-subsequence", "LC-remove-one-element-to-make-the-array-strictly-increasing"],
     "6": ["LC-array-partition", "LC-valid-parentheses"],
     "7": ["LC-reverse-linked-list", "LC-longest-palindromic-substring"],

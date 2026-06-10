@@ -39,14 +39,6 @@ BADGES_CATALOG: List[Dict[str, Any]] = [
         "display_priority": 15,
     },
     {
-        "key": "contest_top_100",
-        "name": "Top 100",
-        "description": "Finished in the top 100 of any LC or CF contest",
-        "category": "contest",
-        "emoji": "🌟",
-        "display_priority": 25,
-    },
-    {
         "key": "contest_rating_climber",
         "name": "Rating Climber",
         "description": "Gained rating in at least one LC or CF contest",
@@ -98,6 +90,16 @@ def sync_badges_to_db() -> None:
         return
     try:
         with conn.cursor() as cur:
+            # First, delete any badges from the database that are no longer in BADGES_CATALOG
+            keys = [b["key"] for b in BADGES_CATALOG]
+            cur.execute(
+                """
+                DELETE FROM badges
+                WHERE key != ALL(%s);
+                """,
+                (keys,),
+            )
+
             for b in BADGES_CATALOG:
                 # Retrieve the configured Discord Role ID for this badge, if set
                 role_id_raw = badge_roles.get(b["key"])

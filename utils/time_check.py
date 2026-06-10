@@ -24,25 +24,29 @@ def is_in_time_bracket(day, msg_timestamp):
 
 def is_unique_in_time_bracket(discord_user_id, msg_timestamp, day):
     conn = connect_to_database()
-    cur = conn.cursor()
+    if not conn:
+        return True
+    try:
+        cur = conn.cursor()
 
-    bracket_start, bracket_end = get_bracket_range(msg_timestamp, day)
+        bracket_start, bracket_end = get_bracket_range(msg_timestamp, day)
 
-    cur.execute(
-        """
-        SELECT COUNT(*)
-        FROM participation_logs
-        WHERE discord_user_id = '%s'
-        AND sent_at >= %s
-        AND sent_at < %s
-        AND deleted_at IS NULL
-    """,
-        (discord_user_id, str(bracket_start), str(bracket_end)),
-    )
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM participation_logs
+            WHERE discord_user_id = '%s'
+            AND sent_at >= %s
+            AND sent_at < %s
+            AND deleted_at IS NULL
+        """,
+            (discord_user_id, str(bracket_start), str(bracket_end)),
+        )
 
-    result = cur.fetchone()
-    cur.close()
-    conn.close()
+        result = cur.fetchone()
+        cur.close()
+    finally:
+        conn.close()
 
 
     if result[0] > 0:
@@ -54,10 +58,19 @@ def is_unique_in_time_bracket(discord_user_id, msg_timestamp, day):
         return False
     return True
 
-def get_bracket_range(msg_timestamp, day):
-    msg_sending_time= msg_timestamp.time() 
+def get_bracket_range(msg_timestamp, day=1):
+    msg_sending_time = msg_timestamp.time() 
     msg_sending_date = msg_timestamp.date()
-    initial, final = get_bracket_range_db(day)
+    
+    bracket = get_bracket_range_db(day)
+    if bracket:
+        initial_dt, final_dt = bracket
+        initial = initial_dt.time()
+        final = final_dt.time()
+    else:
+        initial = INITIAL
+        final = FINAL
+        
     # last second of a day aka the largest possible second of a day
     midnight = time(23,59,59,999999)
 
@@ -68,8 +81,8 @@ def get_bracket_range(msg_timestamp, day):
         start_date = msg_sending_date - timedelta(days=1)
         end_date = msg_sending_date 
 
-    bracket_start = datetime.combine(start_date, INITIAL)
-    bracket_end = datetime.combine(end_date, FINAL)
+    bracket_start = datetime.combine(start_date, initial)
+    bracket_end = datetime.combine(end_date, final)
 
     return bracket_start, bracket_end
 
