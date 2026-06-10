@@ -41,7 +41,7 @@ def enqueue_submission(
                     (user_id, discord_user_id, day, description, submitted_at,
                      failed_platform, error_message)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (user_id, day, status) DO NOTHING
+                ON CONFLICT (user_id, day) WHERE status = 'pending' DO NOTHING
                 """,
                 (user_id, discord_user_id, day, description, submitted_at,
                  failed_platform, error_msg),
