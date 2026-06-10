@@ -58,8 +58,11 @@ class QueueProcessorCog(commands.Cog):
 
         channel = self.bot.get_channel(WATCHED_CHANNEL_ID)
         if not channel:
-            logger.warning(f"Queue processor: WATCHED_CHANNEL_ID {WATCHED_CHANNEL_ID} not found")
-            return
+            try:
+                channel = await self.bot.fetch_channel(WATCHED_CHANNEL_ID)
+            except discord.DiscordException as e:
+                logger.warning(f"Queue processor: WATCHED_CHANNEL_ID {WATCHED_CHANNEL_ID} not found or inaccessible: {e}")
+                return
 
         # 3. Process each job
         for job in jobs:
@@ -120,49 +123,61 @@ class QueueProcessorCog(commands.Cog):
                 continue
 
             # ── Success! Run the full post-submit pipeline ──
-            await asyncio.to_thread(mark_processed, job_id)
-
-            # Use the ORIGINAL submitted_at timestamp for streaks and logs
-            original_time = job["submitted_at"]
-
-            # Time bracket check using original submission time
-            is_legal_time = is_in_time_bracket(job["day"], original_time)
-            if not is_legal_time:
-                await asyncio.to_thread(flag_late, job["user_id"])
-
-            # Save participation log with original timestamp
-            await asyncio.to_thread(
-                save_log,
-                job["description"],
-                job["discord_user_id"],
-                0,  # no interaction.id for queued submissions
-                original_time,
-                1,
-            )
-            messages_sent_total.inc()
-
-            # Milestone badges
             try:
-                newly_awarded = await asyncio.to_thread(
-                    check_and_award_milestones, job["discord_user_id"]
+                # Use the ORIGINAL submitted_at timestamp for streaks and logs
+                original_time = job["submitted_at"]
+
+                # Time bracket check using original submission time
+                is_legal_time = is_in_time_bracket(job["day"], original_time)
+                if not is_legal_time:
+                    await asyncio.to_thread(flag_late, job["user_id"])
+
+                # Save participation log with original timestamp
+                await asyncio.to_thread(
+                    save_log,
+                    job["description"],
+                    job["discord_user_id"],
+                    0,  # no interaction.id for queued submissions
+                    original_time,
+                    1,
                 )
+                messages_sent_total.inc()
+
+                # Milestone badges (swallow exceptions so it doesn't break pipeline)
+                try:
+                    newly_awarded = await asyncio.to_thread(
+                        check_and_award_milestones, job["discord_user_id"]
+                    )
+                except Exception as e:
+                    logger.error(f"Queue job {job_id}: milestone check failed: {e}")
+                    newly_awarded = []
+
+                # Contest detection (swallow exceptions so it doesn't break pipeline)
+                try:
+                    new_contests, contest_badges = await record_user_contests(
+                        job["discord_user_id"]
+                    )
+                except Exception as e:
+                    logger.error(f"Queue job {job_id}: contest poll failed: {e}")
+                    new_contests, contest_badges = [], []
+
+                # Post success in watched channel
+                await self._post_success(channel, job, cp_result, is_legal_time, new_contests)
+                
+                # Announce earned badges
+                await self._announce_badges(channel, job["discord_user_id"], newly_awarded + contest_badges)
+
+                # Mark processed ONLY after the pipeline succeeds
+                await asyncio.to_thread(mark_processed, job_id)
+                logger.info(f"Queue job {job_id}: processed successfully for user {job['user_id']} day {job['day']}")
+
             except Exception as e:
-                logger.error(f"Queue job {job_id}: milestone check failed: {e}")
-                newly_awarded = []
-
-            # Contest detection
-            try:
-                new_contests, contest_badges = await record_user_contests(
-                    job["discord_user_id"]
-                )
-            except Exception as e:
-                logger.error(f"Queue job {job_id}: contest poll failed: {e}")
-                new_contests, contest_badges = [], []
-
-            # Post success in watched channel
-            await self._post_success(channel, job, cp_result, is_legal_time)
-
-            logger.info(f"Queue job {job_id}: processed successfully for user {job['user_id']} day {job['day']}")
+                logger.error(f"Queue job {job_id}: post-submit pipeline failed: {e}")
+                if retry_count + 1 >= max_retries:
+                    await asyncio.to_thread(mark_failed, job_id, f"Pipeline error: {e}")
+                    await self._post_failure(channel, job, reason=f"Pipeline error: {e}")
+                else:
+                    await asyncio.to_thread(mark_retry, job_id)
 
     @process_queue.before_loop
     async def before_process_queue(self):
@@ -179,7 +194,7 @@ class QueueProcessorCog(commands.Cog):
             return lc_alive
         return True  # unknown platform, try anyway
 
-    async def _post_success(self, channel, job: dict, cp_result: dict, is_legal_time: bool):
+    async def _post_success(self, channel, job: dict, cp_result: dict, is_legal_time: bool, new_contests: list = None):
         """Post a success embed in the watched channel for a dequeued submission."""
         solved = cp_result.get("solved_questions", [])
         total = cp_result.get("total_questions", 0)
@@ -202,6 +217,22 @@ class QueueProcessorCog(commands.Cog):
 
         if job["description"]:
             embed.add_field(name="Today's Work", value=job["description"], inline=False)
+
+        if new_contests:
+            lc_count = sum(1 for c in new_contests if c.platform == "leetcode")
+            cf_count = sum(1 for c in new_contests if c.platform == "codeforces")
+            from db.contests import contest_points
+            pts = contest_points()
+            parts = []
+            if lc_count:
+                parts.append(f"{lc_count} LeetCode")
+            if cf_count:
+                parts.append(f"{cf_count} Codeforces")
+            embed.add_field(
+                name="⚡ Contests detected",
+                value=f"{' + '.join(parts)}  →  **+{pts * len(new_contests)} pts**",
+                inline=False,
+            )
 
         if not is_legal_time:
             embed.add_field(
@@ -248,6 +279,33 @@ class QueueProcessorCog(commands.Cog):
             )
         except discord.DiscordException as e:
             logger.error(f"Failed to post queue failure embed: {e}")
+
+    async def _announce_badges(self, channel, discord_user_id: int, badges: list[dict]):
+        """Assign Discord roles and announce newly earned badges."""
+        if not badges:
+            return
+
+        member = channel.guild.get_member(discord_user_id) if hasattr(channel, "guild") else None
+
+        for badge in badges:
+            role_id = badge.get("discord_role_id")
+            if role_id and member:
+                try:
+                    role = channel.guild.get_role(int(role_id))
+                    if role and role not in member.roles:
+                        await member.add_roles(role, reason=f"Earned badge: {badge['key']}")
+                except discord.DiscordException as e:
+                    logger.error(f"Failed to assign role for badge {badge['key']}: {e}")
+
+            embed = discord.Embed(
+                title=f"🏆 New Badge: {badge['name']}",
+                description=f"<@{discord_user_id}> just earned **{badge['name']}** — {badge['description']}",
+                color=discord.Color.gold(),
+            )
+            try:
+                await channel.send(embed=embed)
+            except discord.DiscordException as e:
+                logger.error(f"Failed to send badge embed for {badge['key']}: {e}")
 
 
 async def setup(bot: commands.Bot):
