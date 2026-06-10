@@ -478,6 +478,10 @@ def get_bracket_range_db(day):
         initial_time = datetime.datetime.combine(day_start_date, datetime.time(16, 30), tzinfo=datetime.timezone.utc)
         final_time = datetime.datetime.combine(day_end_date, datetime.time(6, 30), tzinfo=datetime.timezone.utc)
         
+        # Extend Day 9 final submission time by 6 hours (until 6:00 PM IST / 12:30 UTC on June 10)
+        if int(day) == 9:
+            final_time = datetime.datetime.combine(day_end_date, datetime.time(12, 30), tzinfo=datetime.timezone.utc)
+            
         return initial_time, final_time
     except Exception as e:
         print(f"Error calculating bracket range: {e}")
