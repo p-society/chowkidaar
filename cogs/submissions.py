@@ -9,6 +9,7 @@ from db.db import save_log, update_log, delete_cp_log, get_student_profile, upda
 from db.badges import check_and_award_milestones, format_name_with_badge
 from db.contests import record_user_contests
 from db.slash_commands_cp import process_slash_submission, get_user_status
+from db.submission_queue import enqueue_submission, has_pending_entry, update_queued_description
 from utils.permissions import is_watched_channel
 from utils.time_check import is_in_time_bracket
 from utils.metrics import messages_sent_total, messages_edited_total
@@ -65,6 +66,34 @@ class SubmissionsCog(commands.Cog):
 
         # Process CP submissions
         cp_result = await asyncio.to_thread(process_slash_submission, student_id, day)
+
+        #  Queue fallback: if an external API is down, enqueue for retry 
+        if cp_result.get("queue_required"):
+            await asyncio.to_thread(
+                enqueue_submission,
+                user_id=student_id,
+                discord_user_id=interaction.user.id,
+                day=day,
+                description=description,
+                submitted_at=interaction.created_at,
+                failed_platform=cp_result["failed_platform"],
+                error_msg=cp_result.get("error_message", ""),
+            )
+            embed = discord.Embed(
+                title=f"📬 Day {day} Submission Queued",
+                description=(
+                    f"⚠️ **{cp_result['failed_platform'].title()}** API is currently unreachable.\n\n"
+                    "Your submission has been **securely queued** and will be retried "
+                    "automatically every **2 hours** (up to 6 times over 12 hours).\n\n"
+                    "A confirmation will be posted in this channel once verified. ✅"
+                ),
+                color=discord.Color.yellow(),
+            )
+            embed.add_field(name="Student ID", value=student_id, inline=True)
+            embed.add_field(name="Day", value=str(day), inline=True)
+            embed.add_field(name="Platform Down", value=cp_result["failed_platform"].title(), inline=True)
+            await interaction.followup.send(embed=embed)
+            return
 
         is_legal_time = True
         if "error" not in cp_result:
@@ -140,6 +169,22 @@ class SubmissionsCog(commands.Cog):
     @is_watched_channel()
     async def edit_submission(self, interaction: discord.Interaction, student_id: str, day: int, new_description: str):
         await interaction.response.defer()
+
+        # If there's a pending queue entry for this day, update its description
+        # instead of hitting the (likely still down) API again.
+        is_queued = await asyncio.to_thread(has_pending_entry, student_id, day)
+        if is_queued:
+            await asyncio.to_thread(update_queued_description, student_id, day, new_description)
+            embed = discord.Embed(
+                title=f"📝 Day {day} Queued Submission Updated",
+                description=(
+                    "Your queued submission's description has been updated.\n"
+                    "It will be verified when the API recovers."
+                ),
+                color=discord.Color.yellow(),
+            )
+            await interaction.followup.send(embed=embed)
+            return
         
         cp_result = await asyncio.to_thread(process_slash_submission, student_id, day)
         

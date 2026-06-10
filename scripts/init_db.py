@@ -120,6 +120,31 @@ SCHEMA_STATEMENTS = [
     CREATE INDEX IF NOT EXISTS idx_contest_reminders_sent_at
         ON contest_reminders_sent (sent_at);
     """,
+
+    # 6. Submission Queue (for retrying failed /submit commands)
+    """
+    CREATE TABLE IF NOT EXISTS submission_queue (
+        id              SERIAL PRIMARY KEY,
+        user_id         VARCHAR(50) NOT NULL,
+        discord_user_id BIGINT NOT NULL,
+        day             INTEGER NOT NULL,
+        description     TEXT DEFAULT '',
+        submitted_at    TIMESTAMPTZ NOT NULL,
+        failed_platform TEXT NOT NULL DEFAULT 'unknown',
+        queued_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        next_retry_at   TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '2 hours',
+        retry_count     INTEGER NOT NULL DEFAULT 0,
+        max_retries     INTEGER NOT NULL DEFAULT 6,
+        status          TEXT NOT NULL DEFAULT 'pending',
+        error_message   TEXT,
+        UNIQUE (user_id, day, status)
+    );
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_submission_queue_pending
+        ON submission_queue (status, next_retry_at)
+        WHERE status = 'pending';
+    """,
 ]
 
 SEED_BADGES = [
