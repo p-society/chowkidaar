@@ -65,10 +65,34 @@ def process_slash_submission(user_id: str, day: int):
     except Exception:
         cf_submissions = {}
         
-    if isinstance(lc_submissions, dict) and 'error' in lc_submissions:
-        return {"error": f"LeetCode error: {lc_submissions['message']}"}
-    if isinstance(cf_submissions, dict) and 'error' in cf_submissions:
-        return {"error": f"CodeForces error: {cf_submissions['message']}"}
+    # Determine which platforms failed
+    lc_failed = isinstance(lc_submissions, dict) and 'error' in lc_submissions
+    cf_failed = isinstance(cf_submissions, dict) and 'error' in cf_submissions
+
+    if lc_failed and cf_failed:
+        return {
+            "queue_required": True,
+            "failed_platform": "both",
+            "error_message": f"LeetCode: {lc_submissions['message']}; CodeForces: {cf_submissions['message']}",
+            "user_id": user_id,
+            "name": name,
+        }
+    if lc_failed:
+        return {
+            "queue_required": True,
+            "failed_platform": "leetcode",
+            "error_message": lc_submissions['message'],
+            "user_id": user_id,
+            "name": name,
+        }
+    if cf_failed:
+        return {
+            "queue_required": True,
+            "failed_platform": "codeforces",
+            "error_message": cf_submissions['message'],
+            "user_id": user_id,
+            "name": name,
+        }
     
     solved = []
     for idx, q in enumerate(day_questions):
