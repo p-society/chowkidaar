@@ -91,12 +91,14 @@ def fetch_codeforces_schedule(timeout: float = 10.0) -> List[ContestSchedule]:
 # ──────────────────────────────────────────────────────────────────────────
 
 LC_ALL_CONTESTS_QUERY = """
-query allContestsForCalendar {
-  allContests {
-    title
-    titleSlug
-    startTime
-    duration
+query pastContests {
+  pastContests(pageNo: 1, numPerPage: 10) {
+    data {
+      title
+      titleSlug
+      startTime
+      duration
+    }
   }
 }
 """
@@ -119,7 +121,8 @@ def fetch_leetcode_schedule(timeout: float = 10.0) -> List[ContestSchedule]:
     if "errors" in payload:
         raise ContestScheduleError(f"LC GraphQL error: {payload['errors']}")
 
-    contests = ((payload.get("data") or {}).get("allContests")) or []
+    contests_data = (payload.get("data") or {}).get("pastContests") or {}
+    contests = contests_data.get("data") or []
     out: List[ContestSchedule] = []
     for c in contests:
         st = c.get("startTime")
