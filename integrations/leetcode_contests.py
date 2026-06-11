@@ -80,15 +80,32 @@ def _post(username: str, timeout: float = 10.0) -> dict:
         LEETCODE_GRAPHQL_URL,
         json={"query": QUERY, "variables": {"username": username}},
         headers={
-            # LeetCode rejects requests without a real-looking UA.
-            "User-Agent": "Mozilla/5.0 (chowkidaar bot; +https://github.com/p-society/chowkidaar)",
+            # LeetCode sits behind Cloudflare and will 403 / serve a challenge
+            # page to user agents that look like bots (anything containing
+            # "bot", custom client strings, etc.). Use a plain browser UA — the
+            # same one db/platforms/leetcode.py uses successfully for profiles.
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
             "Content-Type": "application/json",
             "Referer": f"https://leetcode.com/u/{username}/",
         },
         timeout=timeout,
     )
     resp.raise_for_status()
-    payload = resp.json()
+    # When Cloudflare blocks the request it returns an HTML challenge page, not
+    # JSON. Surface that as a clear error instead of letting json() blow up with
+    # an opaque JSONDecodeError that callers silently swallow as "no contests".
+    try:
+        payload = resp.json()
+    except ValueError as e:
+        snippet = (resp.text or "")[:200].replace("\n", " ")
+        raise LeetCodeAPIError(
+            f"Non-JSON response for {username!r} (HTTP {resp.status_code}); "
+            f"likely blocked by LeetCode/Cloudflare. Body starts: {snippet!r}"
+        ) from e
     if "errors" in payload:
         raise LeetCodeAPIError(f"GraphQL error for {username!r}: {payload['errors']}")
     return payload.get("data") or {}

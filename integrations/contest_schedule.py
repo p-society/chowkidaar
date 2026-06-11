@@ -110,7 +110,12 @@ def fetch_leetcode_schedule(timeout: float = 10.0) -> List[ContestSchedule]:
         LC_GRAPHQL_URL,
         json={"query": LC_ALL_CONTESTS_QUERY},
         headers={
-            "User-Agent": "Mozilla/5.0 (chowkidaar bot; contest-gate)",
+            # Plain browser UA — bot-flagged UAs get 403'd by Cloudflare.
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
             "Content-Type": "application/json",
             "Referer": "https://leetcode.com/contest/",
         },
