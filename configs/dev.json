@@ -167,9 +167,9 @@
     ],
     "11": [
         {
-            "type": "youtube",
-            "title": "AI & Data Science Program by IIT Mandi",
-            "link": "https://www.youtube.com/watch?v=example_ai_program"
+            "type": "article",
+            "title": "data-science-for-beginners",
+            "link": "https://www.geeksforgeeks.org/data-science/data-science-for-beginners/"
         },
         {
             "type": "blog",
@@ -178,8 +178,8 @@
         },
         {
             "type": "blog",
-            "title": "Web Development for Beginners - CareerFoundry",
-            "link": "https://careerfoundry.com/en/tutorials/web-development-for-beginners/introduction-to-web-development"
+            "title": "Web Development Technologies",
+            "link": "https://www.geeksforgeeks.org/web-tech/web-technology/"
         }
     ],
     "12": [
@@ -201,7 +201,7 @@
         {
             "type": "article",
             "title": "Web3 Architecture and How It Compares to Traditional Web Apps",
-            "link": "https://www.freecodecamp.org/news/web3-architecture-how-it-works-and-how-it-compares-to-web2/"
+            "link": "https://thenewstack.io/web3-architecture-and-how-it-compares-to-traditional-web-apps/"
         }
     ],
     "13": [
@@ -241,8 +241,8 @@
     "15": [
         {
             "type": "youtube",
-            "title": "Data Engineering Crash Course",
-            "link": "https://www.youtube.com/watch?v=fXk8FoaVLp0"
+            "title": "Data Engineering for Beginners",
+            "link": "https://youtu.be/PHsC_t0j1dU?si=hN1Wox5ELoKWlWLQ"
         },
         {
             "type": "blog",
@@ -263,8 +263,8 @@
         },
         {
             "type": "blog",
-            "title": "OpenAI API Tutorial - How to Build AI Applications",
-            "link": "https://platform.openai.com/docs/tutorials"
+            "title": "OpenAI API Developer Quickstart - How to Build AI Applications",
+            "link": "https://developers.openai.com/api/docs/quickstart"
         }
     ],
     "17": [
@@ -276,7 +276,7 @@
         {
             "type": "article",
             "title": "Introduction to Large Language Models",
-            "link": "https://blog.google/technology/ai/introduction-to-large-language-models/"
+            "link": "https://www.geeksforgeeks.org/artificial-intelligence/large-language-model-llm/"
         }
     ],
     "18": [
@@ -287,8 +287,8 @@
         },
         {
             "type": "article",
-            "title": "Web3 Architecture and How It Compares to Traditional Web Apps",
-            "link": "https://www.freecodecamp.org/news/web3-architecture-how-it-works-and-how-it-compares-to-web2/"
+            "title": "Web3 Architecture and Tech Stack",
+            "link": "https://www.geeksforgeeks.org/computer-networks/web3-architecture-and-tech-stack/"
         }
     ],
     "19": [
@@ -311,8 +311,8 @@
         },
         {
             "type": "blog",
-            "title": "An Introduction To Web Development - CareerFoundry",
-            "link": "https://careerfoundry.com/en/tutorials/web-development-for-beginners/introduction-to-web-development"
+            "title": "An Introduction To Web Development",
+            "link": "https://www.w3schools.com/webdev/"
         },
         {
             "type": "blog",
@@ -375,7 +375,7 @@
         {
             "type": "article",
             "title": "The Ethics of Artificial Intelligence and Machine Learning",
-            "link": "https://hai.stanford.edu/resources/ethics-ai"
+            "link": "https://plato.stanford.edu/entries/ethics-ai/"
         }
     ],
     "25": [
@@ -386,8 +386,8 @@
         },
         {
             "type": "blog",
-            "title": "How to Write a Great Developer Resume",
-            "link": "https://www.freecodecamp.org/news/how-to-write-a-good-resume-in-tech/"
+            "title": "How to Create a Developer Resume That Actually Gets Interviews",
+            "link": "https://stayahead.tech/developer-resume-guide/"
         },
         {
             "type": "github",
@@ -397,7 +397,7 @@
         {
             "type": "article",
             "title": "Career Growth for Software Developers",
-            "link": "https://medium.com/better-programming/career-growth-for-software-developers-1b0b031a2a15"
+            "link": "https://algocademy.com/blog/software-developer-career-progression-a-comprehensive-guide-to-growth-and-advancement/"
         }
     ]
 }
