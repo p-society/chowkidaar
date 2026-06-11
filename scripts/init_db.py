@@ -120,6 +120,49 @@ SCHEMA_STATEMENTS = [
     CREATE INDEX IF NOT EXISTS idx_contest_reminders_sent_at
         ON contest_reminders_sent (sent_at);
     """,
+
+    # 6. Submission Queue (for retrying failed /submit commands)
+    """
+    CREATE TABLE IF NOT EXISTS submission_queue (
+        id              SERIAL PRIMARY KEY,
+        user_id         VARCHAR(50) NOT NULL,
+        discord_user_id BIGINT NOT NULL,
+        day             INTEGER NOT NULL,
+        description     TEXT DEFAULT '',
+        submitted_at    TIMESTAMPTZ NOT NULL,
+        failed_platform TEXT NOT NULL DEFAULT 'unknown',
+        queued_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        next_retry_at   TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '2 hours',
+        retry_count     INTEGER NOT NULL DEFAULT 0,
+        max_retries     INTEGER NOT NULL DEFAULT 6,
+        status          TEXT NOT NULL DEFAULT 'pending',
+        error_message   TEXT
+    );
+    """,
+    # Drop the old overly-broad UNIQUE constraint if it exists (migration)
+    """
+    DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'submission_queue_user_id_day_status_key'
+        ) THEN
+            ALTER TABLE submission_queue
+                DROP CONSTRAINT submission_queue_user_id_day_status_key;
+        END IF;
+    END $$;
+    """,
+    # Partial unique index: only one pending entry per user+day
+    """
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_submission_queue_pending_unique
+        ON submission_queue (user_id, day)
+        WHERE status = 'pending';
+    """,
+    """
+    CREATE INDEX IF NOT EXISTS idx_submission_queue_pending
+        ON submission_queue (status, next_retry_at)
+        WHERE status = 'pending';
+    """,
 ]
 
 SEED_BADGES = [
