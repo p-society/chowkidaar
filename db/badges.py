@@ -171,7 +171,7 @@ def count_distinct_submission_days(
                   AND deleted_at IS NULL
                   AND in_text_valid = 1
                   AND sent_at >= %s
-                  AND sent_at <  %s
+                  AND sent_at <  %s + INTERVAL '1 day'
                 """,
                 (discord_user_id, start_utc, end_utc),
             )
@@ -277,7 +277,7 @@ def current_streak(discord_user_id: int, conn=None) -> int:
                   AND deleted_at IS NULL
                   AND in_text_valid = 1
                   AND sent_at >= %s
-                  AND sent_at <  %s
+                  AND sent_at <  %s + INTERVAL '1 day'
                 ORDER BY d DESC
                 """,
                 (discord_user_id, start_utc, end_utc),
@@ -340,7 +340,7 @@ def max_streak(discord_user_id: int, conn=None) -> int:
                   AND deleted_at IS NULL
                   AND in_text_valid = 1
                   AND sent_at >= %s
-                  AND sent_at <  %s
+                  AND sent_at <  %s + INTERVAL '1 day'
                 ORDER BY d ASC
                 """,
                 (discord_user_id, start_utc, end_utc),
