@@ -165,15 +165,14 @@ def count_distinct_submission_days(
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT COUNT(DISTINCT DATE((sent_at AT TIME ZONE 'UTC') - INTERVAL '16 hours 30 minutes'))
-                FROM participation_logs
-                WHERE discord_user_id = %s
-                  AND deleted_at IS NULL
-                  AND in_text_valid = 1
-                  AND sent_at >= %s
-                  AND sent_at <  %s + INTERVAL '1 day'
+                SELECT count(DISTINCT unnested_days)
+                FROM (
+                    SELECT unnest(q1 || q2 || q3) AS unnested_days
+                    FROM student_list_2024
+                    WHERE discord_user_id = %s
+                ) subquery;
                 """,
-                (discord_user_id, start_utc, end_utc),
+                (discord_user_id,),
             )
             (count,) = cur.fetchone()
             return int(count or 0)
