@@ -386,10 +386,15 @@ def check_and_award_milestones(discord_user_id: int, conn=None) -> List[dict]:
         return []
 
     try:
-        days = max_streak(discord_user_id, conn=conn)
+        streak_days = max_streak(discord_user_id, conn=conn)
+        
+        start_utc, end_utc = get_event_window()
+        progress_days = count_distinct_submission_days(discord_user_id, start_utc, end_utc, conn=conn)
 
         newly_awarded: List[dict] = []
         for threshold, badge_key in MILESTONE_THRESHOLDS:
+            # Day 25 is based on total progress. Others are based on max streak.
+            days = progress_days if badge_key == "day25_done" else streak_days
             if days < threshold:
                 continue
             meta = award_badge(discord_user_id, badge_key, conn=conn)
