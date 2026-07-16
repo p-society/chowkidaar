@@ -10,11 +10,20 @@ import logging as logger
 # Load questions from JSON
 def load_questions():
     try:
-        with open("db/questions.json", "r") as file:
+        with open("configs/questions.json", "r") as file:
             return json.load(file)
     except Exception as e:
         logger.error(f"Error loading questions.json: {e}", extra={"tags": {"event": "load_questions"}})
         return {}
+
+def load_event_config():
+    try:
+        with open("configs/event_config.json", "r") as file:
+            return json.load(file)
+    except Exception as e:
+        logger.error(f"Error loading event_config.json: {e}", extra={"tags": {"event": "load_event_config"}})
+        # Fallback config
+        return {"start_date": "2025-06-01", "cp": {"duration_days": 25, "announcement_intro": "**Day {day} Coding Challenge** 🚀\n\nToday's questions:\n\n", "announcement_outro": "\nRemember to submit your solutions in this channel by end of day! Good luck! 💪"}}
 
 # Format URLs for questions
 def format_question_links(day_number, questions_list):
@@ -34,19 +43,29 @@ def format_question_links(day_number, questions_list):
     
     return formatted_links
 
-# Create daily question message
-def create_daily_question_message(day_number, questions_list):
+# Create daily question embed
+def create_daily_question_embed(day_number, questions_list, config):
     links = format_question_links(day_number, questions_list)
     
-    message = f"**Day {day_number} Coding Challenge** 🚀\n\n"
-    message += "Today's questions:\n\n"
+    intro = config["cp"]["announcement_intro"].format(day=day_number)
     
+    q_text = ""
     for i, link in enumerate(links, 1):
-        message += f"{i}. {link}\n"
+        q_text += f"{i}. {link}\n"
     
-    message += "\nRemember to submit your solutions in this channel by end of day! Good luck! 💪"
-    print(f"Created message for day {day_number}: {message}")
-    return message
+    outro = config["cp"]["announcement_outro"].format(day=day_number)
+    
+    embed = discord.Embed(
+        title=f"🚀 Coding Challenge: Day {day_number}",
+        description=f"{intro}\n{q_text}\n{outro}",
+        color=discord.Color.teal()
+    )
+    
+    branding = config.get("branding") or {}
+    footer_text = branding.get("subtitle", "25 Days of Productivity")
+    embed.set_footer(text=footer_text)
+    
+    return embed
 
 # Calculate days since start date
 def get_current_day(start_date):
@@ -56,7 +75,9 @@ def get_current_day(start_date):
 
 # Get the first day of next month
 def get_start_date():
-    return datetime.datetime(2025, 6, 1, tzinfo=datetime.timezone.utc).date()
+    config = load_event_config()
+    date_parts = [int(x) for x in config["start_date"].split("-")]
+    return datetime.datetime(date_parts[0], date_parts[1], date_parts[2], tzinfo=datetime.timezone.utc).date()
 
 
 class DailyQuestionScheduler:
@@ -64,6 +85,7 @@ class DailyQuestionScheduler:
         self.bot = bot
         self.channel_id = int(channel_id)
         self.questions = load_questions()
+        self.config = load_event_config()
         self.start_date = get_start_date()
         self.daily_task.start()
         
@@ -76,22 +98,35 @@ class DailyQuestionScheduler:
         try:
             day = get_current_day(self.start_date)
             
-            # Check if we're within the 25-day window
-            if 0 < day <= 25:
+            # Check if we're within the duration window
+            duration_days = self.config["cp"]["duration_days"]
+            if 0 < day <= duration_days:
                 day_str = str(day)
                 if day_str in self.questions:
                     channel = self.bot.get_channel(self.channel_id)
+                    if not channel:
+                        try:
+                            channel = await self.bot.fetch_channel(self.channel_id)
+                        except Exception as e:
+                            logger.error(f"Failed to fetch channel {self.channel_id}: {e}", 
+                                         extra={"tags": {"event": "daily_question"}})
+                    
                     if channel:
                         questions_list = self.questions[day_str]
-                        message = create_daily_question_message(day, questions_list)
-                        cp_message = await channel.send(message)
-                    try:
-                        await cp_message.pin()
-                        logger.info(f"Sent day {day} dev questions to channel", 
-                                  extra={"tags": {"event": "daily_resources"}})
-                    except Exception as pin_error:
-                        logger.error(f"Failed to pin message for day {day}: {pin_error}", 
-                                  extra={"tags": {"event": "daily_resources"}})
+                        embed = create_daily_question_embed(day, questions_list, self.config)
+                        try:
+                            cp_message = await channel.send(embed=embed)
+                            try:
+                                await cp_message.pin()
+                            except Exception as pin_error:
+                                logger.error(f"Failed to pin message for day {day}: {pin_error}", 
+                                             extra={"tags": {"event": "daily_resources"}})
+                            
+                            logger.info(f"Sent day {day} dev questions to channel", 
+                                        extra={"tags": {"event": "daily_resources"}})
+                        except Exception as send_error:
+                            logger.error(f"Failed to send daily question message: {send_error}", 
+                                         extra={"tags": {"event": "daily_question"}})
                     else:
                         logger.error(f"Channel {self.channel_id} not found", 
                                    extra={"tags": {"event": "daily_question"}})

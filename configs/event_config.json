@@ -1,0 +1,30 @@
+{
+  "start_date": "2026-06-01",
+  "bot_admins": [
+    1336348458671673354,
+    803101677460520990
+  ],
+  "branding": {
+    "title": "25 Days of Productivity",
+    "subtitle": "by The Programming Society · IIIT-BH"
+  },
+  "points": {
+    "contest_participation": 10
+  },
+  "cp": {
+    "duration_days": 25,
+    "announcement_intro": "**Day {day} Coding Challenge** \n\nToday's questions:\n\n",
+    "announcement_outro": "\n⏰ **Remember to log your progress using `/submit` between 10:00 PM and 12:00 PM (Noon) IST!**"
+  },
+  "dev": {
+    "announcement_intro": "**Day {day} Development Resources** \n\nToday's learning materials:\n\n",
+    "announcement_outro": "\nExpand your knowledge with these resources. Happy learning! \n\n⏰ **Remember to log your progress using `/submit` between 10:00 PM and 12:00 PM (Noon) IST!**"
+  },
+  "badge_roles": {
+    "day7_done": 1509572059313868972,
+    "day14_done": 1509572243464654878,
+    "day25_done": 1509572331901812776,
+    "contest_participant": 1509572476223361104,
+    "contest_rating_climber": 1509572602111201411
+  }
+}

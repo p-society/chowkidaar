@@ -1,0 +1,403 @@
+{
+    "1": [
+        {
+            "type": "tutorial",
+            "title": "HTML Fundamentals - Complete Guide",
+            "link": "https://www.w3schools.com/html/default.asp"
+        },
+        {
+            "type": "youtube",
+            "title": "CSS Crash Course for Absolute Beginners",
+            "link": "https://www.youtube.com/watch?v=yfoY53QXEnI"
+        },
+        {
+            "type": "blog",
+            "title": "Git Workflow Best Practices",
+            "link": "https://www.atlassian.com/git/tutorials/comparing-workflows"
+        }
+
+    ],
+    "2": [
+        {
+            "type": "github",
+            "title": "Clean Code JavaScript",
+            "link": "https://github.com/ryanmcdermott/clean-code-javascript"
+        },
+        {
+            "type": "youtube",
+            "title": "FastAPI Tutorial - Building APIs with Python",
+            "link": "https://www.youtube.com/watch?v=7t2alSnE2-I"
+        }
+    ],
+    "3": [
+        {
+            "type": "blog",
+            "title": "Open Source Guide: How to Contribute to Open Source",
+            "link": "https://opensource.guide/how-to-contribute/"
+        },
+        {
+            "type": "github",
+            "title": "Professional Programming: Collection of Full-Stack Resources",
+            "link": "https://github.com/charlax/professional-programming"
+        },
+        {
+            "type": "article",
+            "title": "Just-fucking-code",
+            "link": "https://www.justfuckingcode.com/"
+        }
+    ],
+    "4": [
+        {
+            "type": "youtube",
+            "title": "React Hooks Tutorial",
+            "link": "https://www.youtube.com/watch?v=TNhaISOUy6Q"
+        },
+        {
+            "type": "blog",
+            "title": "TypeScript Design Patterns",
+            "link": "https://refactoring.guru/design-patterns/typescript"
+        },
+        {
+            "type": "blog",
+            "title": "JWT Authentication Best Practices",
+            "link": "https://blog.logrocket.com/jwt-authentication-best-practices/"
+        }
+    ],
+    "5": [
+        {
+            "type": "github",
+            "title": "Public APIs",
+            "link": "https://github.com/public-apis/public-apis"
+        },
+        {
+            "type": "github",
+            "title": "33 JavaScript Concepts",
+            "link": "https://github.com/leonardomso/33-js-concepts"
+        },
+        {
+            "type": "blog",
+            "title": "Beginner's Guide to Backend Development",
+            "link": "https://learntocodewith.me/posts/backend-development/"
+        }
+    ],
+    "6": [
+        {
+            "type": "youtube",
+            "title": "Next.js in 100 Seconds + Full Tutorial",
+            "link": "https://www.youtube.com/watch?v=Sklc_fQBmcs"
+        },
+        {
+            "type": "article",
+            "title": "Monolith vs Microservices",
+            "link": "https://www.atlassian.com/microservices/microservices-architecture/microservices-vs-monolith"
+        },
+        {
+            "type": "github",
+            "title": "Node.js Best Practices",
+            "link": "https://github.com/goldbergyoni/nodebestpractices"
+        }
+    ],
+    "7": [
+        {
+            "type": "blog",
+            "title": "AWS Basics for Beginners",
+            "link": "https://aws.amazon.com/getting-started/fundamentals-core-concepts/"
+        },
+        {
+            "type": "blog",
+            "title": "Introduction to Azure Cloud Services",
+            "link": "https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/getting-started"
+        },
+        {
+            "type": "blog",
+            "title": "Google Cloud Platform Basics",
+            "link": "https://cloud.google.com/docs/overview"
+        }
+    ],
+    "8": [
+        {
+            "type": "blog",
+            "title": "REST vs tRPC vs gRPC vs GraphQL: Comparing API Paradigms",
+            "link": "https://medium.com/@thiwankajayasiri/trpc-grpc-graphql-or-rest-when-to-use-what-fb16fb188268"
+        },
+        {
+            "type": "blog",
+            "title": "Web Security Fundamentals",
+            "link": "https://portswigger.net/web-security"
+        }
+    ],
+    "9": [
+        {
+            "type": "blog",
+            "title": "Build Your First Android App - Android Developers",
+            "link": "https://developer.android.com/get-started/overview"
+        },
+        {
+            "type": "blog",
+            "title": "Beginner's Guide to Mobile App Development",
+            "link": "https://www.appmysite.com/blog/the-ultimate-guide-to-mobile-app-development/"
+        },
+        {
+            "type": "blog",
+            "title": "What is Low-Level Design? - GeeksforGeeks",
+            "link": "https://www.geeksforgeeks.org/what-is-low-level-design-or-lld-learn-system-design/"
+        }
+    ],
+    "10": [
+        {
+            "type": "youtube",
+            "title": "Kubernetes Explained in 100 Seconds",
+            "link": "https://www.youtube.com/watch?v=PziYflu8cB8"
+        },
+        {
+            "type": "blog",
+            "title": "Design Patterns in Python",
+            "link": "https://refactoring.guru/design-patterns/python"
+        },
+        {
+            "type": "github",
+            "title": "Tech Interview Handbook",
+            "link": "https://github.com/yangshun/tech-interview-handbook"
+        },
+        {
+            "type": "article",
+            "title": "Serverless Architecture Explained",
+            "link": "https://www.twilio.com/blog/2017/05/introducing-serverless-framework-v1.html"
+        }
+    ],
+    "11": [
+        {
+            "type": "article",
+            "title": "data-science-for-beginners",
+            "link": "https://www.geeksforgeeks.org/data-science/data-science-for-beginners/"
+        },
+        {
+            "type": "blog",
+            "title": "Machine Learning Introduction - W3Schools",
+            "link": "https://www.w3schools.com/ai/"
+        },
+        {
+            "type": "blog",
+            "title": "Web Development Technologies",
+            "link": "https://www.geeksforgeeks.org/web-tech/web-technology/"
+        }
+    ],
+    "12": [
+        {
+            "type": "youtube",
+            "title": "Blockchain Technology Explained",
+            "link": "https://www.youtube.com/watch?v=qOVAbKKSH10"
+        },
+        {
+            "type": "blog",
+            "title": "Introduction to Smart Contracts",
+            "link": "https://ethereum.org/en/developers/docs/smart-contracts/"
+        },
+        {
+            "type": "github",
+            "title": "Solidity by Example",
+            "link": "https://github.com/raineorshine/solidity-by-example"
+        },
+        {
+            "type": "article",
+            "title": "Web3 Architecture and How It Compares to Traditional Web Apps",
+            "link": "https://thenewstack.io/web3-architecture-and-how-it-compares-to-traditional-web-apps/"
+        }
+    ],
+    "13": [
+        {
+            "type": "youtube",
+            "title": "Software Testing Tutorial - Learn Unit Testing and Integration Testing",
+            "link": "https://www.youtube.com/watch?v=7r4xVDI2vho"
+        },
+        {
+            "type": "blog",
+            "title": "Test-Driven Development (TDD) - GeeksforGeeks",
+            "link": "https://www.geeksforgeeks.org/test-driven-development-tdd/"
+        },
+        {
+            "type": "github",
+            "title": "The Practical Test Pyramid",
+            "link": "https://martinfowler.com/articles/practical-test-pyramid.html"
+        }
+    ],
+    "14": [
+        {
+            "type": "blog",
+            "title": "Cloud Computing Tutorial - GeeksforGeeks",
+            "link": "https://www.geeksforgeeks.org/cloud-computing-tutorial/"
+        },
+        {
+            "type": "blog",
+            "title": "Artificial Intelligence Tutorial for Beginners - Simplilearn",
+            "link": "https://www.simplilearn.com/tutorials/artificial-intelligence-tutorial"
+        },
+        {
+            "type": "blog",
+            "title": "The Future of American Industry Depends on Open Source Tech",
+            "link": "https://www.wired.com/story/opinon-the-future-of-american-industry-depends-on-open-source-tech"
+        }
+    ],
+    "15": [
+        {
+            "type": "youtube",
+            "title": "Data Engineering for Beginners",
+            "link": "https://youtu.be/PHsC_t0j1dU?si=hN1Wox5ELoKWlWLQ"
+        },
+        {
+            "type": "blog",
+            "title": "Data Visualization with D3.js",
+            "link": "https://www.freecodecamp.org/news/learn-to-create-a-line-chart-using-d3-js-4f43f1ee716b/"
+        },
+        {
+            "type": "github",
+            "title": "Awesome Data Engineering",
+            "link": "https://github.com/igorbarinov/awesome-data-engineering"
+        }
+    ],
+    "16": [
+        {
+            "type": "youtube",
+            "title": "Natural Language Processing With Python and NLTK",
+            "link": "https://www.youtube.com/watch?v=X2vAabgKiuM"
+        },
+        {
+            "type": "blog",
+            "title": "OpenAI API Developer Quickstart - How to Build AI Applications",
+            "link": "https://developers.openai.com/api/docs/quickstart"
+        }
+    ],
+    "17": [
+        {
+            "type": "github",
+            "title": "Hugging Face Transformers",
+            "link": "https://github.com/huggingface/transformers"
+        },
+        {
+            "type": "article",
+            "title": "Introduction to Large Language Models",
+            "link": "https://www.geeksforgeeks.org/artificial-intelligence/large-language-model-llm/"
+        }
+    ],
+    "18": [
+        {
+            "type": "github",
+            "title": "Solidity by Example",
+            "link": "https://github.com/raineorshine/solidity-by-example"
+        },
+        {
+            "type": "article",
+            "title": "Web3 Architecture and Tech Stack",
+            "link": "https://www.geeksforgeeks.org/computer-networks/web3-architecture-and-tech-stack/"
+        }
+    ],
+    "19": [
+        {
+            "type": "tutorial",
+            "title": "Python Advanced Data Structures and Algorithms",
+            "link": "https://realpython.com/python-data-structures/"
+        },
+        {
+            "type": "github",
+            "title": "Modern JavaScript Tutorial",
+            "link": "https://javascript.info/"
+        }
+    ],
+    "20": [
+        {
+            "type": "blog",
+            "title": "Machine Learning Tutorial - GeeksforGeeks",
+            "link": "https://www.geeksforgeeks.org/machine-learning/"
+        },
+        {
+            "type": "blog",
+            "title": "An Introduction To Web Development",
+            "link": "https://www.w3schools.com/webdev/"
+        },
+        {
+            "type": "blog",
+            "title": "DevOps Tutorial | Microsoft Azure",
+            "link": "https://azure.microsoft.com/en-us/solutions/devops/tutorial"
+        }
+    ],
+        "21": [
+        {
+            "type": "youtube",
+            "title": "SQL for Data Analysis - Full Course for Beginners",
+            "link": "https://www.youtube.com/watch?v=HXV3zeQKqGY"
+        },
+        {
+            "type": "github",
+            "title": "Awesome Big Data",
+            "link": "https://github.com/onurakpolat/awesome-bigdata"
+        },
+        {
+            "type": "blog",
+            "title": "Data Engineering Project Ideas with Tutorials",
+            "link": "https://www.startdataengineering.com/post/data-engineering-project-for-beginners-batch-edition/"
+        }
+    ],
+    "22": [
+        {
+            "type": "youtube",
+            "title": "Introduction to Quantum Computing",
+            "link": "https://www.youtube.com/watch?v=JRIPV0dPAd4"
+        },
+        {
+            "type": "blog",
+            "title": "Cybersecurity Fundamentals: A Comprehensive Guide",
+            "link": "https://www.cisco.com/c/en/us/products/security/what-is-cybersecurity.html"
+        }
+    ],
+    "23": [
+        {
+            "type": "youtube",
+            "title": "Augmented Reality Development for Beginners",
+            "link": "https://www.youtube.com/watch?v=WzfDo2Wpxks"
+        },
+        {
+            "type": "blog",
+            "title": "Edge Computing: The Future of Distributed Systems",
+            "link": "https://www.ibm.com/cloud/what-is-edge-computing"
+        },
+        {
+            "type": "github",
+            "title": "Awesome IoT Projects",
+            "link": "https://github.com/phodal/awesome-iot"
+        }
+    ],
+    "24": [
+        {
+            "type": "github",
+            "title": "Computer Vision Resources and Projects",
+            "link": "https://github.com/jbhuang0604/awesome-computer-vision"
+        },
+        {
+            "type": "article",
+            "title": "The Ethics of Artificial Intelligence and Machine Learning",
+            "link": "https://plato.stanford.edu/entries/ethics-ai/"
+        }
+    ],
+    "25": [
+        {
+            "type": "youtube",
+            "title": "How to Prepare for Technical Interviews",
+            "link": "https://www.youtube.com/watch?v=Xw2D9aJRBY4"
+        },
+        {
+            "type": "blog",
+            "title": "How to Create a Developer Resume That Actually Gets Interviews",
+            "link": "https://stayahead.tech/developer-resume-guide/"
+        },
+        {
+            "type": "github",
+            "title": "Coding Interview University",
+            "link": "https://github.com/jwasham/coding-interview-university"
+        },
+        {
+            "type": "article",
+            "title": "Career Growth for Software Developers",
+            "link": "https://algocademy.com/blog/software-developer-career-progression-a-comprehensive-guide-to-growth-and-advancement/"
+        }
+    ]
+}

@@ -28,6 +28,7 @@ multidict==6.0.5
 numpy==1.26.4
 orjson==3.10.3
 pandas==2.2.2
+Pillow==10.4.0
 prometheus-client==0.22.0
 psycopg2-binary==2.9.9
 pydantic==2.7.1
